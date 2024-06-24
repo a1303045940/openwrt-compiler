@@ -1,0 +1,50 @@
+name: Call Build
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  repository_dispatch:
+  workflow_dispatch:
+
+env:
+  TZ: UTC
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config:
+          [
+            {
+              workflow: "build-openwrt",
+              openwrt_branch: "openwrt;main",
+              device_branch: "x86_64",
+            },
+            {
+              workflow: "build-openwrt",
+              openwrt_branch: "immortalwrt;master",
+              device_branch: "x86_64",
+            },
+          ]
+      fail-fast: false
+    steps:
+      - name: Trigger workflow
+        id: build
+        working-directory: /
+        env:
+          workflow: ${{ matrix.config.workflow }}
+        run: |
+          data='
+          {
+            "ref": "main",
+            "inputs": {
+              "openwrt_branch": "${{ matrix.config.openwrt_branch }}",
+              "device_branch": "${{ matrix.config.device_branch }}"
+            }
+          }'
+          curl -XPOST \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: Bearer ${{ secrets.PAT }}" \
+          https://api.github.com/repos/${{ github.repository }}/actions/workflows/${{ env.workflow }}.yml/dispatches \
+          --data "$data"
