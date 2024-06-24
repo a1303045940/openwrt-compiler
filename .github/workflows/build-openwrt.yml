@@ -475,6 +475,8 @@ jobs:
           release_md_dir=$(dirname ${release_md})
           mkdir -p ${release_md_dir}
           touch ${release_md}
+          ls -lhR ${release_md_dir}
+          cat ${release_md}
 
           # 记录Clone源码的分支和构建者
           echo -e "# Build ${device_branch} - by ${repo_diy_owner}" >> ${release_md}
@@ -571,8 +573,8 @@ jobs:
           removeArtifacts: false
           replacesArtifacts: true
           token: "${{ secrets.GITHUB_TOKEN }}"
-          bodyFile: "${{ env.release_md }}"
-          # body: ""
+          # bodyFile: "${{ env.release_md }}"
+          body: ""
 
       - name: Clear workspace
         id: clearwork
