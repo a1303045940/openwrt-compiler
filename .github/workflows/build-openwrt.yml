@@ -60,8 +60,6 @@ jobs:
             repo_openwrt="https://git.openwrt.org/openwrt/openwrt.git"
           elif [[ "${openwrt_branch}" == "immortalwrt" ]]; then
             repo_openwrt="https://github.com/immortalwrt/immortalwrt.git"
-          elif [[ "${openwrt_branch}" == "immortalwrt-mt798x" ]]; then
-            repo_openwrt="https://github.com/hanwckf/immortalwrt-mt798x.git"
           else
             echo -e "Unknown openwrt_branch: ${openwrt_branch} - ${repo_openwrt_branch}"
             exit 1
@@ -412,8 +410,6 @@ jobs:
       - name: Download package
         id: package
         working-directory: ${{ env.path_openwrt }}
-        # env:
-        #   FORCE_UNSAFE_CONFIGURE: 1
         if: ${{ steps.install.outputs.status }} == 'success' && !cancelled()
         run: |
           echo -e "Current working directory: $(pwd)"
@@ -426,8 +422,6 @@ jobs:
       - name: Compile the OpenWrt
         id: compile
         working-directory: ${{ env.path_openwrt }}
-        # env:
-        #   FORCE_UNSAFE_CONFIGURE: 1
         if: ${{ steps.package.outputs.status }} == 'success' && !cancelled()
         run: |
           echo -e "Current working directory: $(pwd)"
@@ -477,6 +471,9 @@ jobs:
         run: |
           echo -e "Current working directory: $(pwd)"
 
+          # 提取release_md变量中的目录路径 检查目录是否存在，如果不存在则创建
+          release_md_dir=$(dirname ${release_md})
+          mkdir -p ${release_md_dir}
           touch ${release_md}
 
           # 记录Clone源码的分支和构建者
