@@ -573,8 +573,8 @@ jobs:
           removeArtifacts: false
           replacesArtifacts: true
           token: "${{ secrets.GITHUB_TOKEN }}"
-          # bodyFile: "${{ env.release_md }}"
-          body: ""
+          bodyFile: "${{ env.release_md }}"
+          # body: ""
 
       - name: Clear workspace
         id: clearwork
