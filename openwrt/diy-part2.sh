@@ -46,6 +46,19 @@ CONFIG_PACKAGE_iperf3-ssl=n
 # CONFIG_PACKAGE_batctl-tiny=n
 # " >> .config
 
+echo "
+# Docker
+CONFIG_PACKAGE_docker=y
+CONFIG_PACKAGE_docker-compose=y
+CONFIG_PACKAGE_dockerd=y
+# Docker Luci
+CONFIG_PACKAGE_luci-app-dockerman=y
+CONFIG_PACKAGE_luci-i18n-dockerman-zh-cn=y
+CONFIG_PACKAGE_luci-lib-docker=y
+# Docker etc
+CONFIG_PACKAGE_libcgroup=y
+" >> .config
+
 # ---------- sync config ----------
 make oldconfig
 cat ./.config
