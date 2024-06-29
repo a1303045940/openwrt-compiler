@@ -64,9 +64,6 @@ jobs:
     if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
 
     steps:
-      # - name: Checkout Code
-      #   uses: actions/checkout@main
-
       - name: Set environment variable
         id: var
         working-directory: /
@@ -322,7 +319,7 @@ jobs:
           for path in "${paths[@]}"
           do
             echo "Listing contents of $path"
-            ls -lhR "$path"
+            ls -lh "$path"
           done
 
           # ========== END ==========
