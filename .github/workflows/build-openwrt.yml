@@ -190,10 +190,6 @@ jobs:
           declare -a paths=("${{ env.path_build }}" "${{ env.path_openwrt }}" "${{ env.path_diy }}" "${{ env.path_output }}" "${{ env.path_diy_branch }}")
           for path in "${paths[@]}"
           do
-            if [ ! -d "$path" ]; then
-              echo "Directory $path does not exist, creating..."
-              mkdir -p "$path"
-            fi
             echo "Listing contents of $path"
             ls -lhR "$path"
           done
