@@ -134,7 +134,7 @@ jobs:
 
       - name: Clone OpenWrt
         id: clonesys
-        working-directory: ${{ env.path_build }}
+        working-directory: /
         if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
         run: |
           echo -e "Current working directory: $(pwd)"
@@ -147,7 +147,7 @@ jobs:
 
       - name: Clone DIY
         id: clonediy
-        working-directory: ${{ env.path_openwrt }}
+        working-directory: /
         if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
         run: |
           echo -e "Current working directory: $(pwd)"
