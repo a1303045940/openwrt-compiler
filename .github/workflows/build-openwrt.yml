@@ -73,142 +73,107 @@ jobs:
         run: |
           echo -e "Current working directory: $(pwd)"
 
-          # echo "DEFAULT_OPENWRT_BRANCH=openwrt;main" | tee -a "$GITHUB_ENV"
-          # echo "DEFAULT_DEVICE_BRANCH=x86_64" | tee -a "$GITHUB_ENV"
-
-          # echo "openwrt_branch=${{ inputs.openwrt_branch }}" | tee -a "$GITHUB_ENV"
-          # echo "device_branch=${{ inputs.device_branch }}" | tee -a "$GITHUB_ENV"
-
           # ========== Openwrt make menuconfig ==========
-          echo "Target_System=${{ inputs.Target_System }}" | tee -a "$GITHUB_ENV"
-          echo "Subtarget=${{ inputs.Subtarget }}" | tee -a "$GITHUB_ENV"
-          if [[ -z "${{ inputs.Target_Profile }}" ]]; then
-            echo "Target_Profile=${{ inputs.Subtarget }}" | tee -a "$GITHUB_ENV"
-          else
-            echo "Target_Profile=${{ inputs.Target_Profile }}" | tee -a "$GITHUB_ENV"
+          Target_System="${{ inputs.Target_System }}"
+          Subtarget="${{ inputs.Subtarget }}"
+          Target_Profile="${{ inputs.Target_Profile }}"
+          if [[ -z "$Target_Profile" ]]; then
+            Target_Profile="$Subtarget"
           fi
 
           # ========== Set OpenWrt repo branch ==========
-          echo "repo_diy=https://github.com/${{ github.repository }}" | tee -a "$GITHUB_ENV"
-          echo "repo_diy_owner=${{ github.repository_owner }}" | tee -a "$GITHUB_ENV"
+          repo_openwrt="https://${{ inputs.OpenWrt_Repository }}"
+          repo_openwrt_branch="${{ inputs.OpenWrt_Branch }}"
+          repo_diy="https://github.com/${{ github.repository }}"
+          repo_diy_owner="${{ github.repository_owner }}"
 
-          # IFS=';' read -ra BRANCHES <<< "${{ env.openwrt_branch }}" 
-          # openwrt_branch=${BRANCHES[0]}
-          # repo_openwrt_branch=${BRANCHES[1]}
+          # Simplified path construction
+          dir_build="build"
+          dir_openwrt="openwrt"
+          dir_diy="DIY"
+          dir_output="output"
+          path_build="/${dir_build}"
+          path_openwrt="/${dir_openwrt}"
+          path_output="/${dir_output}"
+          path_diy="/${dir_diy}"
 
-          # if [[ "${openwrt_branch}" == "openwrt" ]]; then
-          #   repo_openwrt="https://git.openwrt.org/openwrt/openwrt.git"
-          # elif [[ "${openwrt_branch}" == "immortalwrt" ]]; then
-          #   repo_openwrt="https://github.com/immortalwrt/immortalwrt.git"
-          # else
-          #   echo -e "Unknown openwrt_branch: ${openwrt_branch} - ${repo_openwrt_branch}"
-          #   exit 1
-          # fi
+          # DIY Files
+          path_diy_branch="${path_diy}/${{ inputs.Target_System }}/${{ inputs.Subtarget }}"
+          diy_config="${path_diy_branch}/${Target_Profile}.config"
+          diy_feeds="${path_diy_branch}/feeds.conf.default"
+          diy_p1_sh="${path_diy_branch}/diy-part1.sh"
+          diy_p2_sh="${path_diy_branch}/diy-part2.sh"
+          diy_files="${path_diy_branch}/files"
+          release_md="${path_diy_branch}/release.md"
 
-          echo "repo_openwrt=https://${{ inputs.OpenWrt_Repository }}" | tee -a "$GITHUB_ENV"
-          echo "repo_openwrt_branch=${{ inputs.OpenWrt_Branch }}" | tee -a "$GITHUB_ENV"
+          # Export all variables at once
+          cat <<EOF | tee -a "$GITHUB_ENV"
+          repo_openwrt=${repo_openwrt}
+          repo_openwrt_branch=${repo_openwrt_branch}
+          repo_diy=${repo_diy}
+          repo_diy_owner=${repo_diy_owner}
+          Target_System=${Target_System}
+          Subtarget=${Subtarget}
+          Target_Profile=${Target_Profile}
+          path_build=${path_build}
+          path_openwrt=${path_openwrt}
+          path_output=${path_output}
+          path_diy=${path_diy}
+          path_diy_branch=${path_diy_branch}
+          diy_config=${diy_config}
+          diy_feeds=${diy_feeds}
+          diy_p1_sh=${diy_p1_sh}
+          diy_p2_sh=${diy_p2_sh}
+          diy_files=${diy_files}
+          release_md=${release_md}
+          EOF
 
-          # echo "openwrt_branch=${openwrt_branch}" >> "$GITHUB_ENV"
-          # echo "repo_openwrt=${repo_openwrt}" >> "$GITHUB_ENV"
-          # echo "repo_openwrt_branch=${repo_openwrt_branch}" >> "$GITHUB_ENV"
-
-          # ========== Build Path ==========
-          # dir_build="build"
-          # dir_diy="DIY"
-          # dir_output="output"
-          # dir_openwrt="openwrt"
-
-          echo "dir_build=build" | tee -a "$GITHUB_ENV"
-          echo "dir_openwrt=openwrt" | tee -a "$GITHUB_ENV"
-          echo "dir_diy=DIY" | tee -a "$GITHUB_ENV"
-          echo "dir_output=output" | tee -a "$GITHUB_ENV"
-
-          # ---------- / ----------
-          # path_build="/${dir_build}"
-          # path_openwrt="${path_build}/${openwrt_branch}"
-          echo "path_build=/${{ env.dir_build }}" | tee -a "$GITHUB_ENV"
-          echo "path_openwrt=/${{ env.dir_openwrt }}" | tee -a "$GITHUB_ENV"
-          echo "path_output=/${{ env.dir_output }}" | tee -a "$GITHUB_ENV"
-          echo "path_diy=/${{ env.dir_diy }}" | tee -a "$GITHUB_ENV"
-
-          # ---------- path_openwrt/ ----------
-          # path_output="${path_openwrt}/${dir_output}"
-          # path_diy="${path_openwrt}/${dir_diy}"
-          # path_diy_branch="${path_diy}/${openwrt_branch}"
-
-          # echo "path_build=${path_build}" >> "$GITHUB_ENV"
-          # echo "path_openwrt=${path_openwrt}" >> "$GITHUB_ENV"
-          # echo "path_output=${path_output}" >> "$GITHUB_ENV"
-          # echo "path_diy=${path_diy}" >> "$GITHUB_ENV"
-
-          # ========== DIY Files ==========
-          echo "path_diy_branch=${{ env.path_diy }}/${{ env.Target_System }}/${{ env.Subtarget }}" | tee -a "$GITHUB_ENV"
-          echo "diy_config=${{ env.path_diy_branch }}/${{ env.Target_Profile }}.config" | tee -a "$GITHUB_ENV"
-          echo "diy_feeds=${{ env.path_diy_branch }}/feeds.conf.default" | tee -a "$GITHUB_ENV"
-          echo "diy_p1_sh=${{ env.path_diy_branch }}/diy-part1.sh" | tee -a "$GITHUB_ENV"
-          echo "diy_p2_sh=${{ env.path_diy_branch }}/diy-part2.sh" | tee -a "$GITHUB_ENV"
-          echo "diy_files=${{ env.path_diy_branch }}/files" | tee -a "$GITHUB_ENV"
-          echo "release_md=${{ env.path_diy_branch }}/release.md" | tee -a "$GITHUB_ENV"
-
-          # diy_config="${path_diy_branch}/${device_branch}.config"
-          # diy_feeds="${path_diy_branch}/feeds.conf.default"
-          # diy_p1_sh="${path_diy_branch}/diy-part1.sh"
-          # diy_p2_sh="${path_diy_branch}/diy-part2.sh"
-          # diy_files="${path_diy_branch}/files"
-          # release_md="${path_diy_branch}/release.md"
-          # echo "diy_config=${diy_config}" >> "$GITHUB_ENV"
-          # echo "diy_feeds=${diy_feeds}" >> "$GITHUB_ENV"
-          # echo "diy_p1_sh=${diy_p1_sh}" >> "$GITHUB_ENV"
-          # echo "diy_p2_sh=${diy_p2_sh}" >> "$GITHUB_ENV"
-          # echo "diy_files=${diy_files}" >> "$GITHUB_ENV"
-          # echo "release_md=${release_md}" >> "$GITHUB_ENV"
-
-          # ========== END ==========
+          # Indicate success
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      # - name: Clone OpenWrt
-      #   id: clonesys
-      #   working-directory: ${{ env.path_build }}
-      #   if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
-      #   run: |
-      #     echo -e "Current working directory: $(pwd)"
+      - name: Clone OpenWrt
+        id: clonesys
+        working-directory: ${{ env.path_build }}
+        if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
+        run: |
+          echo -e "Current working directory: $(pwd)"
 
-      #     git clone ${repo_openwrt} ${path_openwrt} --single-branch --depth=1 --branch=${repo_openwrt_branch}
-      #     echo -e "repo_openwrt: [ ${repo_openwrt} ]\nBRANCH: [ ${repo_openwrt_branch} ]"
+          git clone ${repo_openwrt} ${path_openwrt} --single-branch --depth=1 --branch=${repo_openwrt_branch}
+          echo -e "repo_openwrt: [ ${repo_openwrt} ]\nBRANCH: [ ${repo_openwrt_branch} ]"
 
-      #     df -hT ${PWD}
-      #     echo "status=success" >> ${GITHUB_OUTPUT}
+          df -hT ${PWD}
+          echo "status=success" >> ${GITHUB_OUTPUT}
 
-      # - name: Clone DIY
-      #   id: clonediy
-      #   working-directory: ${{ env.path_openwrt }}
-      #   if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
-      #   run: |
-      #     echo -e "Current working directory: $(pwd)"
+      - name: Clone DIY
+        id: clonediy
+        working-directory: ${{ env.path_openwrt }}
+        if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
+        run: |
+          echo -e "Current working directory: $(pwd)"
 
-      #     git clone ${repo_diy} ${path_diy} --single-branch --depth=1 --branch=main
-      #     echo -e "repo_diy: [ ${repo_diy} ]\nBRANCH: [ main ]"
+          git clone ${repo_diy} ${path_diy} --single-branch --depth=1 --branch=main
+          echo -e "repo_diy: [ ${repo_diy} ]\nBRANCH: [ main ]"
 
-      #     df -hT ${PWD}
-      #     echo "status=success" >> ${GITHUB_OUTPUT}
+          df -hT ${PWD}
+          echo "status=success" >> ${GITHUB_OUTPUT}
 
-      - name: Checkout OpenWrt repository
-        uses: actions/checkout@main
-        with:
-          repository: ${{ env.repo_openwrt }}
-          ref: ${{ env.repo_openwrt_branch }}
-          path: ${{ env.path_openwrt }}
-          # token: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Checkout OpenWrt repository
+      #   uses: actions/checkout@main
+      #   with:
+      #     repository: ${{ env.repo_openwrt }}
+      #     ref: ${{ env.repo_openwrt_branch }}
+      #     path: ${{ env.path_openwrt }}
+      #     # token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Checkout DIY repository
-        # id: clonediy
-        # if: steps.disk.outputs.status == 'success' && !cancelled()
-        uses: actions/checkout@main
-        with:
-          repository: ${{ env.repo_diy }}
-          ref: ${{ github.ref }}
-          path: ${{ env.path_diy }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Checkout DIY repository
+      #   # id: clonediy
+      #   # if: steps.disk.outputs.status == 'success' && !cancelled()
+      #   uses: actions/checkout@main
+      #   with:
+      #     repository: ${{ env.repo_diy }}
+      #     ref: ${{ github.ref }}
+      #     path: ${{ env.path_diy }}
+      #     token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check environment
         # id: checkenv
