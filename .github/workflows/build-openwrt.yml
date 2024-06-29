@@ -6,23 +6,6 @@ on:
   repository_dispatch:
   workflow_dispatch:
     inputs:
-      # openwrt_branch:
-      #   description: "Select openwrt branch"
-      #   required: true
-      #   default: "openwrt;main"
-      #   type: choice
-      #   options:
-      #     - openwrt;main
-      #     - openwrt;openwrt-23.05
-      #     - immortalwrt;master
-      #     - immortalwrt;openwrt-23.05
-      # device_branch:
-      #   description: "Select device branch"
-      #   required: true
-      #   default: "x86_64"
-      #   type: choice
-      #   options:
-      #     - x86_64
       OpenWrt_Repository:
         description: "OpenWrt Repository"
         required: true
@@ -37,12 +20,22 @@ on:
         description: "Target System"
         required: true
         default: "x86"
-        type: string
+        # type: string
+        type: choice
+        options:
+          - "x86"
+          - "MediaTek Ralink ARM"
+          - "MediaTek Ralink MIPS"
       Subtarget:
         description: "Subtarget"
         required: true
         default: "x86_64"
-        type: string
+        # type: string
+        type: choice
+        options:
+          - "x86_64"
+          - "MT798x"
+          - "MT7620"
       Target_Profile:
         description: "Target Profile"
         required: false
@@ -51,18 +44,12 @@ on:
 
 # env:
 # TZ: UTC
-# DEFAULT_OPENWRT_BRANCH: "openwrt;main"
-# DEFAULT_DEVICE_BRANCH: "x86_64"
-# typeOfTesting: ${{ github.event_name == 'schedule' && 'stage-test-local-All' }}
-# openwrt_branch: ${{ inputs.openwrt_branch || 'openwrt;main' }}
-# device_branch: ${{ inputs.device_branch || 'x86_64'}}
 
 jobs:
   build:
     name: Build Openwrt
     runs-on: ubuntu-22.04
-    if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
-
+    # if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
     steps:
       - name: Set environment variable
         id: var
@@ -482,7 +469,7 @@ jobs:
       - name: "[release.md] Record release.md"
         id: record
         working-directory: ${{ env.path_openwrt }}
-        if: ${{ steps.output.outputs.status }} == 'success' && !cancelled()
+        # if: ${{ steps.output.outputs.status }} == 'success' && !cancelled()
         run: |
           echo -e "Current working directory: $(pwd)"
 
@@ -551,20 +538,20 @@ jobs:
             echo -e "\n</details>" >> ${release_md}
           fi
 
-          # 切换到Output目录
-          ls -lhR ${path_output}
-          # cd ${path_output}
-          # echo -e "Current working directory: $(pwd)"
+          # # 切换到Output目录
+          # ls -lhR ${path_output}
+          # # cd ${path_output}
+          # # echo -e "Current working directory: $(pwd)"
 
-          # 记录Output bin文件
-          echo -e "\n### Tested or NOT\n\n" >> ${release_md}
-          for file in ${path_output}/*.bin
-          do
-            if [[ ! -d "${file}" ]]
-            then
-              echo -e "- [ ] $(basename "${file}")" >> ${release_md}
-            fi
-          done
+          # # 记录Output bin文件
+          # echo -e "\n### Tested or NOT\n\n" >> ${release_md}
+          # for file in ${path_output}/*.bin
+          # do
+          #   if [[ ! -d "${file}" ]]
+          #   then
+          #     echo -e "- [ ] $(basename "${file}")" >> ${release_md}
+          #   fi
+          # done
 
           # 将仓库 URL 写入到 GITHUB_OUTPUT 环境变量指定的文件中
           # echo "TAGS_NAME=${TAGS_NAME}" >> ${GITHUB_OUTPUT}
@@ -572,7 +559,6 @@ jobs:
 
           # echo -e "record=${release_md}" >> ${GITHUB_OUTPUT}
 
-      # https://github.com/ncipollo/release-action/blob/main/README.zh-Hans.md
       - name: Upload OpenWrt to Release
         uses: ncipollo/release-action@main
         if: ${{ steps.output.outputs.status }} == 'success' && !cancelled()
