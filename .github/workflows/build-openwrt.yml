@@ -93,11 +93,10 @@ jobs:
           dir_diy="DIY"
           dir_output="output"
           path_build="/${dir_build}"
-          path_openwrt="/${dir_openwrt}"
-          path_output="/${dir_output}"
-          path_diy="/${dir_diy}"
+          path_openwrt="${dir_build}/${dir_openwrt}"
+          path_diy="${dir_build}/${dir_diy}"
+          path_output="${dir_build}/${dir_output}"
           sudo mkdir -p "${path_build}"
-          sudo mkdir -p "${path_output}"
 
           # DIY Files
           path_diy_branch="${path_diy}/${{ inputs.Target_System }}/${{ inputs.Subtarget }}"
