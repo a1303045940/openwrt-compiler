@@ -49,13 +49,13 @@ on:
         default: ""
         type: string
 
-env:
-  # TZ: UTC
-  # DEFAULT_OPENWRT_BRANCH: "openwrt;main"
-  # DEFAULT_DEVICE_BRANCH: "x86_64"
-  # typeOfTesting: ${{ github.event_name == 'schedule' && 'stage-test-local-All' }}
-  # openwrt_branch: ${{ inputs.openwrt_branch || 'openwrt;main' }}
-  # device_branch: ${{ inputs.device_branch || 'x86_64'}}
+# env:
+# TZ: UTC
+# DEFAULT_OPENWRT_BRANCH: "openwrt;main"
+# DEFAULT_DEVICE_BRANCH: "x86_64"
+# typeOfTesting: ${{ github.event_name == 'schedule' && 'stage-test-local-All' }}
+# openwrt_branch: ${{ inputs.openwrt_branch || 'openwrt;main' }}
+# device_branch: ${{ inputs.device_branch || 'x86_64'}}
 
 jobs:
   build:
