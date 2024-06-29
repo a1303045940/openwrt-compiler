@@ -18,13 +18,17 @@ jobs:
           [
             {
               workflow: "build-openwrt",
-              openwrt_branch: "openwrt;main",
-              device_branch: "x86_64",
+              OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git",
+              OpenWrt_Branch: "main",
+              Target_System: "x86",
+              Subtarget: "x86_64",
             },
             {
               workflow: "build-openwrt",
-              openwrt_branch: "immortalwrt;master",
-              device_branch: "x86_64",
+              OpenWrt_Repository: "github.com/immortalwrt/immortalwrt.git",
+              OpenWrt_Branch: "main",
+              Target_System: "x86",
+              Subtarget: "x86_64",
             },
           ]
       fail-fast: false
@@ -39,8 +43,10 @@ jobs:
           {
             "ref": "main",
             "inputs": {
-              "openwrt_branch": "${{ matrix.config.openwrt_branch }}",
-              "device_branch": "${{ matrix.config.device_branch }}"
+              "OpenWrt_Repository": "${{ matrix.config.OpenWrt_Repository }}",
+              "OpenWrt_Branch": "${{ matrix.config.OpenWrt_Branch }}",
+              "Target_System": "${{ matrix.config.Target_System }}",
+              "Subtarget": "${{ matrix.config.Subtarget }}"
             }
           }'
           curl -XPOST \
