@@ -24,8 +24,8 @@ on:
         type: choice
         options:
           - "x86"
-          - "MediaTek Ralink ARM"
-          - "MediaTek Ralink MIPS"
+          - "MediaTek_Ralink_ARM"
+          - "MediaTek_Ralink_MIPS"
       Subtarget:
         description: "Subtarget"
         required: true
