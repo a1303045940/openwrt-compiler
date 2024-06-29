@@ -185,8 +185,11 @@ jobs:
           printenv
 
           echo -e "# ========== Path =========="
-          declare -a paths=("${{ env.path_build }}" "${{ env.path_openwrt }}" "${{ env.path_diy }}" "${{ env.path_output }}" "${{ env.path_diy_branch }}")
-          for path in "${paths[@]}"
+          declare -a check_and_create_paths=("${{ env.path_build }}" "${{ env.path_output }}")
+          declare -a check_only_paths=("${{ env.path_openwrt }}" "${{ env.path_diy }}" "${{ env.path_diy_branch }}")
+
+          # Check and create if necessary
+          for path in "${check_and_create_paths[@]}"
           do
             if [ ! -d "$path" ]; then
               echo "Directory $path does not exist, creating..."
@@ -194,6 +197,17 @@ jobs:
             fi
             echo "Listing contents of $path"
             ls -lhR "$path"
+          done
+
+          # Check only
+          for path in "${check_only_paths[@]}"
+          do
+            if [ ! -d "$path" ]; then
+              echo "Directory $path does not exist."
+            else
+              echo "Listing contents of $path"
+              ls -lhR "$path"
+            fi
           done
 
           # ========== END ==========
