@@ -96,8 +96,8 @@ jobs:
           path_openwrt="/${dir_openwrt}"
           path_output="/${dir_output}"
           path_diy="/${dir_diy}"
-          mkdir -p "${path_build}"
-          mkdir -p "${path_output}"
+          sudo mkdir -p "${path_build}"
+          sudo mkdir -p "${path_output}"
 
           # DIY Files
           path_diy_branch="${path_diy}/${{ inputs.Target_System }}/${{ inputs.Subtarget }}"
