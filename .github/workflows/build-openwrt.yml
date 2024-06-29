@@ -92,11 +92,11 @@ jobs:
           dir_openwrt="openwrt"
           dir_diy="DIY"
           dir_output="output"
+
           path_build="/${dir_build}"
           path_openwrt="${path_build}/${dir_openwrt}"
           path_diy="${path_build}/${dir_diy}"
           path_output="${path_build}/${dir_output}"
-          sudo mkdir -p "${path_build}"
 
           # DIY Files
           path_diy_branch="${path_diy}/${{ inputs.Target_System }}/${{ inputs.Subtarget }}"
@@ -130,70 +130,6 @@ jobs:
           EOF
 
           # Indicate success
-          echo "status=success" >> ${GITHUB_OUTPUT}
-
-      - name: Clone OpenWrt
-        id: clonesys
-        working-directory: /
-        if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
-        run: |
-          echo -e "Current working directory: $(pwd)"
-
-          git clone ${repo_openwrt} ${path_openwrt} --single-branch --depth=1 --branch=${repo_openwrt_branch}
-          echo -e "repo_openwrt: [ ${repo_openwrt} ]\nBRANCH: [ ${repo_openwrt_branch} ]"
-
-          df -hT ${PWD}
-          echo "status=success" >> ${GITHUB_OUTPUT}
-
-      - name: Clone DIY
-        id: clonediy
-        working-directory: /
-        if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
-        run: |
-          echo -e "Current working directory: $(pwd)"
-
-          git clone ${repo_diy} ${path_diy} --single-branch --depth=1 --branch=main
-          echo -e "repo_diy: [ ${repo_diy} ]\nBRANCH: [ main ]"
-
-          df -hT ${PWD}
-          echo "status=success" >> ${GITHUB_OUTPUT}
-
-      # - name: Checkout OpenWrt repository
-      #   uses: actions/checkout@main
-      #   with:
-      #     repository: ${{ env.repo_openwrt }}
-      #     ref: ${{ env.repo_openwrt_branch }}
-      #     path: ${{ env.path_openwrt }}
-      #     # token: ${{ secrets.GITHUB_TOKEN }}
-
-      # - name: Checkout DIY repository
-      #   # id: clonediy
-      #   # if: steps.disk.outputs.status == 'success' && !cancelled()
-      #   uses: actions/checkout@main
-      #   with:
-      #     repository: ${{ env.repo_diy }}
-      #     ref: ${{ github.ref }}
-      #     path: ${{ env.path_diy }}
-      #     token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check environment
-        # id: checkenv
-        working-directory: /
-        run: |
-          echo -e "Current working directory: $(pwd)"
-
-          # List all environment variables
-          printenv
-
-          echo -e "# ========== Path =========="
-          declare -a paths=("${{ env.path_build }}" "${{ env.path_openwrt }}" "${{ env.path_diy }}" "${{ env.path_output }}" "${{ env.path_diy_branch }}")
-          for path in "${paths[@]}"
-          do
-            echo "Listing contents of $path"
-            ls -lhR "$path"
-          done
-
-          # ========== END ==========
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Clear environment
@@ -309,10 +245,6 @@ jobs:
           # 删除所有不再需要的软件包及其配置文件, 清理 apt 的缓存
           sudo -E apt-get -qq -y autoremove --purge
           sudo -E apt-get -qq clean
-          # 从 root 用户的 .bashrc 和 .profile 文件中删除包含 NVM_DIR 和 skel 的行
-          # sudo sed -i '/NVM_DIR/d;/skel/d' /root/{.bashrc,.profile}
-          # 删除指定的目录及其所有内容
-          # sudo rm -rf ~/{.cargo,.dotnet,.rustup}
           # 设置系统的时区为环境变量 TZ 指定的值
           sudo timedatectl set-timezone "${{ env.TZ }}"
           # 重新加载 systemd 的配置
@@ -348,6 +280,52 @@ jobs:
           sudo chown -R runner.runner ${path_build}
 
           df -Th
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Clone OpenWrt
+        id: clonesys
+        working-directory: /
+        if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          git clone ${repo_openwrt} ${path_openwrt} --single-branch --depth=1 --branch=${repo_openwrt_branch}
+          echo -e "repo_openwrt: [ ${repo_openwrt} ]\nBRANCH: [ ${repo_openwrt_branch} ]"
+
+          df -hT ${PWD}
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Clone DIY
+        id: clonediy
+        working-directory: /
+        if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          git clone ${repo_diy} ${path_diy} --single-branch --depth=1 --branch=main
+          echo -e "repo_diy: [ ${repo_diy} ]\nBRANCH: [ main ]"
+
+          df -hT ${PWD}
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Check environment
+        id: checkenv
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          # List all environment variables
+          printenv
+
+          echo -e "# ========== Path =========="
+          declare -a paths=("${{ env.path_build }}" "${{ env.path_openwrt }}" "${{ env.path_diy }}" "${{ env.path_output }}" "${{ env.path_diy_branch }}")
+          for path in "${paths[@]}"
+          do
+            echo "Listing contents of $path"
+            ls -lhR "$path"
+          done
+
+          # ========== END ==========
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: (feeds.conf.default) Load custom feeds
