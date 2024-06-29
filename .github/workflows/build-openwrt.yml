@@ -93,9 +93,9 @@ jobs:
           dir_diy="DIY"
           dir_output="output"
           path_build="/${dir_build}"
-          path_openwrt="${dir_build}/${dir_openwrt}"
-          path_diy="${dir_build}/${dir_diy}"
-          path_output="${dir_build}/${dir_output}"
+          path_openwrt="${path_build}/${dir_openwrt}"
+          path_diy="${path_build}/${dir_diy}"
+          path_output="${path_build}/${dir_output}"
           sudo mkdir -p "${path_build}"
 
           # DIY Files
