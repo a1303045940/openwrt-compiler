@@ -83,7 +83,7 @@ jobs:
           path_output="${path_build}/${dir_output}"
 
           # DIY Files
-          path_diy_branch="${path_diy}/${{ inputs.Target_System }}/${{ inputs.Subtarget }}"
+          path_diy_branch="${path_diy}/${Target_System}/${Subtarget}"
           diy_config="${path_diy_branch}/${Target_Profile}.config"
           diy_feeds="${path_diy_branch}/feeds.conf.default"
           diy_p1_sh="${path_diy_branch}/diy-part1.sh"
@@ -567,8 +567,8 @@ jobs:
           timestamp: ${{ steps.output.outputs.timestamp }}
           # release_md: ${{ steps.record.outputs.record }}
         with:
-          name: "${{ inputs.Target_System }}_${{ inputs.Subtarget }}_${{ env.timestamp }}"
-          tag: "${{ inputs.Subtarget }}"
+          name: "${{ env.Target_System }}_${{ env.Subtarget }}_${{ env.Target_Profile }}"
+          tag: "${{ env.Target_Profile }}"
           artifacts: "${{ env.path_output }}/*"
           allowUpdates: true
           removeArtifacts: false
