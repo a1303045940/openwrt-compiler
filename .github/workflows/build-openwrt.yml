@@ -41,6 +41,14 @@ on:
         required: false
         default: ""
         type: string
+      continue_on_error:
+        description: "Continue compiling on error? (true/false)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
 
 # env:
 # TZ: UTC
@@ -56,6 +64,8 @@ jobs:
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
+
+          continue_on_error="${{ inputs.continue_on_error || 'false' }}"
 
           # ========== Openwrt make menuconfig ==========
           Target_System="${{ inputs.Target_System }}"
@@ -93,6 +103,7 @@ jobs:
 
           # Export all variables at once
           cat <<EOF | tee -a "$GITHUB_ENV"
+          continue_on_error=${continue_on_error}
           repo_openwrt=${repo_openwrt}
           repo_openwrt_branch=${repo_openwrt_branch}
           repo_diy=${repo_diy}
@@ -428,7 +439,11 @@ jobs:
         run: |
           echo -e "Current working directory: $(pwd)"
           echo -e "$(($(nproc) + 1)) thread compile"
-          make -j$(($(nproc) + 1)) V=s
+          if [ "${{ env.continue_on_error }}" == "true" ]; then
+            make -j$(($(nproc) + 1)) V=s -k
+          else
+            make -j$(($(nproc) + 1)) V=s
+          fi
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Copy to output
