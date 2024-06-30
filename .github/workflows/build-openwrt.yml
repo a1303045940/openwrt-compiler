@@ -567,8 +567,8 @@ jobs:
           timestamp: ${{ steps.output.outputs.timestamp }}
           # release_md: ${{ steps.record.outputs.record }}
         with:
-          name: "${{ env.openwrt_branch }}_${{ env.device_branch }}_${{ env.timestamp }}"
-          tag: "${{ env.openwrt_branch }};${{ env.repo_openwrt_branch }}"
+          name: "${{ inputs.Target_System }}_${{ inputs.Subtarget }}_${{ env.timestamp }}"
+          tag: "${{ inputs.Subtarget }}"
           artifacts: "${{ env.path_output }}/*"
           allowUpdates: true
           removeArtifacts: false
