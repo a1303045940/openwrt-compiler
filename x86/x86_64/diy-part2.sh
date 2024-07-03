@@ -55,6 +55,10 @@ CONFIG_PACKAGE_luci-app-dockerman=y
 CONFIG_PACKAGE_luci-i18n-dockerman-zh-cn=y
 CONFIG_PACKAGE_luci-lib-docker=y
 CONFIG_PACKAGE_libcgroup=y
+
+CONFIG_EXT4_FS_SECURITY=y
+CONFIG_BTRFS_FS_SECURITY=y
+CONFIG_SQUASHFS_XATTR=y
 " >> .config
 
 # Samba
