@@ -124,7 +124,7 @@ jobs:
             "release_md"
           )
           for var in "${env_vars[@]}"; do
-            echo "${var}=${!var}" >> $GITHUB_ENV
+            echo "${var}=${!var}" | tee -a $GITHUB_ENV
           done
 
           echo "status=success" >> ${GITHUB_OUTPUT}
@@ -256,6 +256,7 @@ jobs:
             "xxd"
             "zlib1g-dev"
             "libdb++-dev"
+            "jq"
           )
           sudo -E apt-get -y install "${packages_install[@]}"
 
@@ -347,58 +348,6 @@ jobs:
           done
 
           # ========== END ==========
-          echo "status=success" >> ${GITHUB_OUTPUT}
-
-      - name: "[release.md] Record release.md"
-        id: record
-        working-directory: ${{ env.path_openwrt }}
-        run: |
-          printf "Current working directory: %s\n" "$(pwd)"
-
-          # 提取release_md变量中的目录路径 检查目录是否存在，如果不存在则创建
-          release_md_dir=$(dirname ${release_md})
-          mkdir -p ${release_md_dir}
-          touch ${release_md}
-          ls -lhR ${release_md_dir}
-          cat ${release_md}
-
-          # 模块化记录函数
-          record_to_markdown() {
-            local title="$1"
-            local content="$2"
-            local code_block="$3"
-
-            if [[ -n "${code_block}" ]]; then
-              format="\n### %s\n\n<details>\n<summary>%s</summary>\n\n\`\`\`%s\n%s\n\`\`\`\n\n</details>\n"
-              printf "${format}" "${title}" "${title}" "${code_block}" "${content}" | tee -a ${release_md}
-            else
-              format="\n### %s\n%s\n"
-              printf "${format}" "${title}" "${content}" | tee -a ${release_md}
-            fi
-          }
-
-          # 记录Clone源码的分支和构建者、编译完成时间
-          record_to_markdown "Build ${device_branch} - by ${repo_diy_owner}" ""
-          record_to_markdown "OpenWrt branch" "- [${openwrt_branch};${repo_openwrt_branch}](${repo_openwrt}/tree/${repo_openwrt_branch})"
-          record_to_markdown "Build Time" "- [x] $(date +"%Y-%m-%d %H:%M:%S %z")"
-
-          # 使用for循环和关联数组优化记录文件内容的代码
-          declare -A file_records=(
-            ["${diy_feeds}"]="feeds setting|bash"
-            ["${diy_p1_sh}"]="$(basename "${diy_p1_sh}")|bash"
-            ["${diy_p2_sh}"]="$(basename "${diy_p2_sh}")|bash"
-            ["${diy_config}"]="config setting|makefile"
-          )
-          for file_path in "${!file_records[@]}"; do
-            if [[ -f $file_path ]]; then
-              IFS='|' read -r section_title file_type <<< "${file_records[$file_path]}"
-              # 合并grep命令，一次性移除注释和空行
-              code_content=$(grep -E '^[^#]' "$file_path" | grep -Ev '^\s*$' | sed 's/\s\+$//g')
-              record_to_markdown "$section_title" "$code_content" "$file_type"
-            fi
-          done
-
-          cat ${release_md}
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: (feeds.conf.default) Load custom feeds
@@ -552,6 +501,100 @@ jobs:
           # done
 
           echo -e "timestamp=$(date +"%y%mw%V")" >> ${GITHUB_OUTPUT}
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: "[release.md] Record release.md"
+        id: record
+        working-directory: ${{ env.path_openwrt }}
+        run: |
+          printf "Current working directory: %s\n" "$(pwd)"
+
+          # 提取release_md变量中的目录路径 检查目录是否存在，如果不存在则创建
+          release_md_dir=$(dirname ${release_md})
+          mkdir -p ${release_md_dir}
+          touch ${release_md}
+          ls -lhR ${release_md_dir}
+          cat ${release_md}
+
+          # 模块化记录函数
+          record_to_markdown() {
+            local title="$1"
+            local content="$2"
+            local code_block="$3"
+
+            if [[ -n "${code_block}" ]]; then
+              format="\n### %s\n\n<details>\n<summary>%s</summary>\n\n\`\`\`%s\n%s\n\`\`\`\n\n</details>\n"
+              printf "${format}" "${title}" "${title}" "${code_block}" "${content}" | tee -a ${release_md}
+            else
+              format="\n### %s\n%s\n"
+              printf "${format}" "${title}" "${content}" | tee -a ${release_md}
+            fi
+          }
+
+          # 记录Clone源码的分支和构建者、编译完成时间
+          record_to_markdown "Build ${device_branch} - by ${repo_diy_owner}" ""
+          record_to_markdown "OpenWrt branch" "- [${openwrt_branch};${repo_openwrt_branch}](${repo_openwrt}/tree/${repo_openwrt_branch})"
+          record_to_markdown "Build Time" "- [x] $(date +"%Y-%m-%d %H:%M:%S %z")"
+
+          # 使用for循环和关联数组优化记录文件内容的代码
+          declare -A file_records=(
+            ["${diy_feeds}"]="feeds setting|bash"
+            ["${diy_p1_sh}"]="$(basename "${diy_p1_sh}")|bash"
+            ["${diy_p2_sh}"]="$(basename "${diy_p2_sh}")|bash"
+            ["${diy_config}"]="config setting|makefile"
+          )
+          for file_path in "${!file_records[@]}"; do
+            if [[ -f $file_path ]]; then
+              IFS='|' read -r section_title file_type <<< "${file_records[$file_path]}"
+              # 合并grep命令，一次性移除注释和空行
+              code_content=$(grep -E '^[^#]' "$file_path" | grep -Ev '^\s*$' | sed 's/\s\+$//g')
+              record_to_markdown "$section_title" "$code_content" "$file_type"
+            fi
+          done
+
+          # 定义profiles.json文件的路径
+          profiles_json_path="${{ env.path_output }}/profiles.json"
+          
+          # # 记录编译对象设备
+          # if [[ -f ${profiles_json_path} ]]; then
+          #   profiles=$(jq -r '.profiles | to_entries[] | "\(.key) | \(.value.titles[0].vendor) | \(.value.titles[0].model) | \(.value.images | map(.name) | join(", "))"' ${profiles_json_path})
+            
+          #   device_table="| Profile | Vendor | Model | Images |\n| --- | --- | --- | --- |\n"
+          #   while read -r profile; do
+          #     device_table+="| ${profile} |\n"
+          #   done <<< "${profiles}"
+            
+          #   record_section "Compiled Devices" "${device_table}"
+          # fi
+
+          # 记录编译对象设备
+          if [[ -f ${profiles_json_path} ]]; then
+            # 读取profiles
+            profiles=$(jq -r '.profiles' ${profiles_json_path})
+            
+            # 初始化设备表
+            device_table="| Profile | Vendor | Model | Images |\n| --- | --- | --- | --- |\n"
+            
+            # 迭代profiles的每个entry
+            echo "${profiles}" | jq -c 'to_entries[]' | while read -r entry; do
+              # 读取Profile、Vendor、Model、Images
+              profile=$(echo "${entry}" | jq -r '.key')
+              vendor=$(echo "${entry}" | jq -r '.value.titles[0].vendor')
+              model=$(echo "${entry}" | jq -r '.value.titles[0].model')
+              images=$(echo "${entry}" | jq -r '.value.images | map(.name) | join(", ")')
+
+              # 移除Profile对应的字符串
+              images=${images#*$profile}
+
+              # 生成表格行
+              device_table+="| ${profile} | ${vendor} | ${model} | ${images} |\n"
+            done
+            
+            # 记录编译对象设备
+            record_section "Compiled Devices" "${device_table}"
+          fi
+
+          cat ${release_md}
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Upload OpenWrt to Release
