@@ -101,30 +101,32 @@ jobs:
           diy_files="${path_diy_branch}/files"
           release_md="${path_diy_branch}/release.md"
 
-          # Export all variables at once
-          cat <<EOF | tee -a "$GITHUB_ENV"
-          continue_on_error=${continue_on_error}
-          repo_openwrt=${repo_openwrt}
-          repo_openwrt_branch=${repo_openwrt_branch}
-          repo_diy=${repo_diy}
-          repo_diy_owner=${repo_diy_owner}
-          Target_System=${Target_System}
-          Subtarget=${Subtarget}
-          Target_Profile=${Target_Profile}
-          path_build=${path_build}
-          path_openwrt=${path_openwrt}
-          path_output=${path_output}
-          path_diy=${path_diy}
-          path_diy_branch=${path_diy_branch}
-          diy_config=${diy_config}
-          diy_feeds=${diy_feeds}
-          diy_p1_sh=${diy_p1_sh}
-          diy_p2_sh=${diy_p2_sh}
-          diy_files=${diy_files}
-          release_md=${release_md}
-          EOF
+          # ========== GITHUB_ENV ==========
+          env_vars=(
+            "continue_on_error"
+            "repo_openwrt"
+            "repo_openwrt_branch"
+            "repo_diy"
+            "repo_diy_owner"
+            "Target_System"
+            "Subtarget"
+            "Target_Profile"
+            "path_build"
+            "path_openwrt"
+            "path_output"
+            "path_diy"
+            "path_diy_branch"
+            "diy_config"
+            "diy_feeds"
+            "diy_p1_sh"
+            "diy_p2_sh"
+            "diy_files"
+            "release_md"
+          )
+          for var in "${env_vars[@]}"; do
+            echo "${var}=${!var}" >> $GITHUB_ENV
+          done
 
-          # Indicate success
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Clear environment
@@ -143,6 +145,26 @@ jobs:
           # 关闭所有交换空间 删除指定的交换文件
           sudo swapoff -a
           sudo rm -f /swapfile /mnt/swapfile
+
+          # 删除所有不再需要的软件包及其配置文件, 清理 apt 的缓存
+          # sudo -E apt-get -y -qq purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell openjdk* mongodb* moby* || true
+          packages_purge=(
+            "azure-cli*"
+            "docker*"
+            "ghc*"
+            "zulu*"
+            "llvm*"
+            "firefox"
+            "google*"
+            "dotnet*"
+            "powershell"
+            "openjdk*"
+            "mongodb*"
+            "moby*"
+          )
+          sudo -E apt-get -y -qq purge "${packages_purge[@]}" || true
+          sudo -E apt-get -qq -y autoremove --purge
+
           df -Th
           echo "status=success" >> ${GITHUB_OUTPUT}
 
@@ -156,93 +178,92 @@ jobs:
           echo -e "Current working directory: $(pwd)"
           # 更新 Ubuntu 的软件包列表
           sudo -E apt-get -y -qq update
-          # 删除指定的软件包及其配置文件。如果删除失败，则忽略错误
-          sudo -E apt-get -y -qq purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell openjdk* mongodb* moby* || true
-          # 下载并安装指定 URL 中列出的软件包 https://is.gd/depend_ubuntu2204_openwrt
-          # sudo -E apt-get -y -qq install $(curl -fsSL https://raw.githubusercontent.com/P3TERX/openwrt-list/master/depends-ubuntu-2004)
+
           # sudo apt-get install -y libgdbm-dev libsqlite3-dev tk-dev libbz2-dev
-          sudo -E apt-get -y install \
-          ack \
-          antlr3 \
-          asciidoc \
-          autoconf \
-          automake \
-          autopoint \
-          binutils \
-          bison \
-          build-essential \
-          bzip2 \
-          ccache \
-          clang \
-          clangd \
-          cmake \
-          cpio \
-          curl \
-          device-tree-compiler \
-          ecj \
-          fastjar \
-          flex \
-          gawk \
-          gettext \
-          gcc-multilib \
-          g++-multilib \
-          git \
-          gperf \
-          haveged \
-          help2man \
-          intltool \
-          lib32gcc-s1 \
-          libc6-dev-i386 \
-          libelf-dev \
-          libglib2.0-dev \
-          libgmp3-dev \
-          libltdl-dev \
-          libmpc-dev \
-          libmpfr-dev \
-          libncurses5-dev \
-          libncursesw5 \
-          libncursesw5-dev \
-          libreadline-dev \
-          libssl-dev \
-          libtool \
-          lld \
-          lldb \
-          lrzsz \
-          mkisofs \
-          msmtp \
-          nano \
-          ninja-build \
-          p7zip \
-          p7zip-full \
-          patch \
-          pkgconf \
-          python3 \
-          python3-distutils \
-          python3-docutils \
-          python3-pip \
-          python3-ply \
-          qemu-utils \
-          re2c \
-          rsync \
-          scons \
-          squashfs-tools \
-          subversion \
-          swig \
-          texinfo \
-          uglifyjs \
-          unzip \
-          vim \
-          wget \
-          xmlto \
-          xxd \
-          zlib1g-dev \
-          libdb++-dev
+          packages_install=(
+            "ack"
+            "antlr3"
+            "asciidoc"
+            "autoconf"
+            "automake"
+            "autopoint"
+            "binutils"
+            "bison"
+            "build-essential"
+            "bzip2"
+            "ccache"
+            "clang"
+            "clangd"
+            "cmake"
+            "cpio"
+            "curl"
+            "device-tree-compiler"
+            "ecj"
+            "fastjar"
+            "flex"
+            "gawk"
+            "gettext"
+            "gcc-multilib"
+            "g++-multilib"
+            "git"
+            "gperf"
+            "haveged"
+            "help2man"
+            "intltool"
+            "lib32gcc-s1"
+            "libc6-dev-i386"
+            "libelf-dev"
+            "libglib2.0-dev"
+            "libgmp3-dev"
+            "libltdl-dev"
+            "libmpc-dev"
+            "libmpfr-dev"
+            "libncurses5-dev"
+            "libncursesw5"
+            "libncursesw5-dev"
+            "libreadline-dev"
+            "libssl-dev"
+            "libtool"
+            "lld"
+            "lldb"
+            "lrzsz"
+            "mkisofs"
+            "msmtp"
+            "nano"
+            "ninja-build"
+            "p7zip"
+            "p7zip-full"
+            "patch"
+            "pkgconf"
+            "python3"
+            "python3-distutils"
+            "python3-docutils"
+            "python3-pip"
+            "python3-ply"
+            "qemu-utils"
+            "re2c"
+            "rsync"
+            "scons"
+            "squashfs-tools"
+            "subversion"
+            "swig"
+            "texinfo"
+            "uglifyjs"
+            "unzip"
+            "vim"
+            "wget"
+            "xmlto"
+            "xxd"
+            "zlib1g-dev"
+            "libdb++-dev"
+          )
+          sudo -E apt-get -y install "${packages_install[@]}"
+
           # 删除所有不再需要的软件包及其配置文件, 清理 apt 的缓存
           sudo -E apt-get -qq -y autoremove --purge
           sudo -E apt-get -qq clean
           # 设置系统的时区为环境变量 TZ 指定的值
           sudo timedatectl set-timezone "${{ env.TZ }}"
-          # 重新加载 systemd 的配置
           sudo -E systemctl daemon-reload
 
           echo "status=success" >> ${GITHUB_OUTPUT}
@@ -326,6 +347,58 @@ jobs:
           done
 
           # ========== END ==========
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: "[release.md] Record release.md"
+        id: record
+        working-directory: ${{ env.path_openwrt }}
+        run: |
+          printf "Current working directory: %s\n" "$(pwd)"
+
+          # 提取release_md变量中的目录路径 检查目录是否存在，如果不存在则创建
+          release_md_dir=$(dirname ${release_md})
+          mkdir -p ${release_md_dir}
+          touch ${release_md}
+          ls -lhR ${release_md_dir}
+          cat ${release_md}
+
+          # 模块化记录函数
+          record_to_markdown() {
+            local title="$1"
+            local content="$2"
+            local code_block="$3"
+
+            if [[ -n "${code_block}" ]]; then
+              format="\n### %s\n\n<details>\n<summary>%s</summary>\n\n\`\`\`%s\n%s\n\`\`\`\n\n</details>\n"
+              printf "${format}" "${title}" "${title}" "${code_block}" "${content}" | tee -a ${release_md}
+            else
+              format="\n### %s\n%s\n"
+              printf "${format}" "${title}" "${content}" | tee -a ${release_md}
+            fi
+          }
+
+          # 记录Clone源码的分支和构建者、编译完成时间
+          record_to_markdown "Build ${device_branch} - by ${repo_diy_owner}" ""
+          record_to_markdown "OpenWrt branch" "- [${openwrt_branch};${repo_openwrt_branch}](${repo_openwrt}/tree/${repo_openwrt_branch})"
+          record_to_markdown "Build Time" "- [x] $(date +"%Y-%m-%d %H:%M:%S %z")"
+
+          # 使用for循环和关联数组优化记录文件内容的代码
+          declare -A file_records=(
+            ["${diy_feeds}"]="feeds setting|bash"
+            ["${diy_p1_sh}"]="$(basename "${diy_p1_sh}")|bash"
+            ["${diy_p2_sh}"]="$(basename "${diy_p2_sh}")|bash"
+            ["${diy_config}"]="config setting|makefile"
+          )
+          for file_path in "${!file_records[@]}"; do
+            if [[ -f $file_path ]]; then
+              IFS='|' read -r section_title file_type <<< "${file_records[$file_path]}"
+              # 合并grep命令，一次性移除注释和空行
+              code_content=$(grep -E '^[^#]' "$file_path" | grep -Ev '^\s*$' | sed 's/\s\+$//g')
+              record_to_markdown "$section_title" "$code_content" "$file_type"
+            fi
+          done
+
+          cat ${release_md}
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: (feeds.conf.default) Load custom feeds
@@ -480,99 +553,6 @@ jobs:
 
           echo -e "timestamp=$(date +"%y%mw%V")" >> ${GITHUB_OUTPUT}
           echo "status=success" >> ${GITHUB_OUTPUT}
-
-      - name: "[release.md] Record release.md"
-        id: record
-        working-directory: ${{ env.path_openwrt }}
-        # if: ${{ steps.output.outputs.status }} == 'success' && !cancelled()
-        run: |
-          echo -e "Current working directory: $(pwd)"
-
-          # 提取release_md变量中的目录路径 检查目录是否存在，如果不存在则创建
-          release_md_dir=$(dirname ${release_md})
-          mkdir -p ${release_md_dir}
-          touch ${release_md}
-          ls -lhR ${release_md_dir}
-          cat ${release_md}
-
-          # 记录Clone源码的分支和构建者
-          echo -e "# Build ${device_branch} - by ${repo_diy_owner}" >> ${release_md}
-          echo -e "\n### OpenWrt branch" >> ${release_md}
-          echo -e "\n- [${openwrt_branch};${repo_openwrt_branch}](${repo_openwrt}/tree/${repo_openwrt_branch})" >> ${release_md}
-
-          # 记录编译完成时间
-          echo -e "\n### Build Time" >> ${release_md}
-          echo -e "\n- [x] $(date +"%Y-%m-%d %H:%M:%S %z")" >> ${release_md}
-
-          # 记录DIY_P1.sh
-          file_script=${diy_p1_sh}
-          # 获取所有不以#开头的非空非空格行 并将结尾空格替换为换行符
-          code_script=$(grep '^[^#]' ${file_script} | grep -v '^\s*$' | sed 's/\s+$/\\\n/g')
-          # 折叠使用bash代码块 高亮代码
-          echo -e "\n### $(basename "${file_script}")" >> ${release_md}
-          echo -e "\n<details>\n<summary>Bash</summary>" >> ${release_md}
-          echo -e "\n```bash" >> ${release_md}
-          echo "${code_script}" >> ${release_md}
-          echo -e "```" >> ${release_md}
-          echo -e "\n</details>" >> ${release_md}
-
-          # 记录feeds.conf.default
-          # 获取所有不以#开头的非空非空格行 并将结尾空格替换为换行符
-          code_feeds=$(grep '^[^#]' ${diy_feeds} | grep -v '^\s*$' | sed 's/\s+$/\\\n/g')
-          # 折叠使用bash代码块 高亮代码
-          echo -e "\n### $(basename "${diy_feeds}")" >> ${release_md}
-          echo -e "\n### feeds setting" >> ${release_md}
-          echo -e "\n<details>\n<summary>feeds.conf.default</summary>" >> ${release_md}
-          echo -e "\n```bash" >> ${release_md}
-          echo "${code_feeds}" >> ${release_md}
-          echo -e "```" >> ${release_md}
-          echo -e "\n</details>" >> ${release_md}
-
-          # 记录DIY_P2.sh
-          file_script=${diy_p2_sh}
-          # 获取所有不以#开头的非空非空格行 并将结尾空格替换为换行符
-          code_script=$(grep '^[^#]' ${file_script} | grep -v '^\s*$' | sed 's/\s+$/\\\n/g')
-          # 折叠使用bash代码块 高亮代码
-          echo -e "\n### $(basename "${file_script}")" >> ${release_md}
-          echo -e "\n<details>\n<summary>Bash</summary>" >> ${release_md}
-          echo -e "\n```bash" >> ${release_md}
-          echo "${code_script}" >> ${release_md}
-          echo -e "```" >> ${release_md}
-          echo -e "\n</details>" >> ${release_md}
-
-          # 记录.config配置
-          if [[ -f ${diy_config} ]]; then
-            # 获取所有不以#开头的非空非空格行 并将结尾空格替换为换行符
-            config=$(grep '^[^#]' ${diy_config} | grep -v '^\s*$' | sed 's/\s+$/\\\n/g')
-            # 折叠使用makefile代码块 高亮config设置
-            echo -e "\n### config setting" >> ${release_md}
-            echo -e "\n<details>\n<summary>config</summary>" >> ${release_md}
-            echo -e "\n```makefile" >> ${release_md}
-            echo "${config}" >> ${release_md}
-            echo -e "```" >> ${release_md}
-            echo -e "\n</details>" >> ${release_md}
-          fi
-
-          # # 切换到Output目录
-          # ls -lhR ${path_output}
-          # # cd ${path_output}
-          # # echo -e "Current working directory: $(pwd)"
-
-          # # 记录Output bin文件
-          # echo -e "\n### Tested or NOT\n\n" >> ${release_md}
-          # for file in ${path_output}/*.bin
-          # do
-          #   if [[ ! -d "${file}" ]]
-          #   then
-          #     echo -e "- [ ] $(basename "${file}")" >> ${release_md}
-          #   fi
-          # done
-
-          # 将仓库 URL 写入到 GITHUB_OUTPUT 环境变量指定的文件中
-          # echo "TAGS_NAME=${TAGS_NAME}" >> ${GITHUB_OUTPUT}
-          # Set output information 将构建标签和日期信息写入到 GITHUB_OUTPUT 环境变量指定的文件中
-
-          # echo -e "record=${release_md}" >> ${GITHUB_OUTPUT}
 
       - name: Upload OpenWrt to Release
         uses: ncipollo/release-action@main
