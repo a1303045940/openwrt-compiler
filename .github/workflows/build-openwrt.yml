@@ -509,24 +509,23 @@ jobs:
         run: |
           printf "Current working directory: %s\n" "$(pwd)"
 
-          # 提取release_md变量中的目录路径 检查目录是否存在，如果不存在则创建
+          # 提取release_md变量中的目录路径，检查目录是否存在，如果不存在则创建
           release_md_dir=$(dirname ${release_md})
           mkdir -p ${release_md_dir}
-          touch ${release_md}
-          ls -lhR ${release_md_dir}
-          cat ${release_md}
+          # 确保release.md文件存在
+          : > ${release_md}
 
           # 模块化记录函数
           record_to_markdown() {
             local title="$1"
             local content="$2"
-            local code_block="$3"
+            local code_block="${3:-}"
+            local format="\n### %s\n%s\n"
 
             if [[ -n "${code_block}" ]]; then
               format="\n### %s\n\n<details>\n<summary>%s</summary>\n\n\`\`\`%s\n%s\n\`\`\`\n\n</details>\n"
               printf "${format}" "${title}" "${title}" "${code_block}" "${content}" | tee -a ${release_md}
             else
-              format="\n### %s\n%s\n"
               printf "${format}" "${title}" "${content}" | tee -a ${release_md}
             fi
           }
@@ -552,47 +551,21 @@ jobs:
             fi
           done
 
-          # 定义profiles.json文件的路径
+          # 读取并处理profiles，直接生成Markdown表格，记录编译对象设备
           profiles_json_path="${{ env.path_output }}/profiles.json"
-          
-          # # 记录编译对象设备
-          # if [[ -f ${profiles_json_path} ]]; then
-          #   profiles=$(jq -r '.profiles | to_entries[] | "\(.key) | \(.value.titles[0].vendor) | \(.value.titles[0].model) | \(.value.images | map(.name) | join(", "))"' ${profiles_json_path})
-            
-          #   device_table="| Profile | Vendor | Model | Images |\n| --- | --- | --- | --- |\n"
-          #   while read -r profile; do
-          #     device_table+="| ${profile} |\n"
-          #   done <<< "${profiles}"
-            
-          #   record_to_markdown "Compiled Devices" "${device_table}"
-          # fi
-
-          # 记录编译对象设备
-          if [[ -f ${profiles_json_path} ]]; then
-            # 读取profiles
-            profiles=$(jq -r '.profiles' ${profiles_json_path})
-            
-            # 初始化设备表
-            device_table="| Profile | Vendor | Model | Images |\n| --- | --- | --- | --- |\n"
-            
-            # 迭代profiles的每个entry
-            echo "${profiles}" | jq -c 'to_entries[]' | while read -r entry; do
-              # 读取Profile、Vendor、Model、Images
-              profile=$(echo "${entry}" | jq -r '.key')
-              vendor=$(echo "${entry}" | jq -r '.value.titles[0].vendor')
-              model=$(echo "${entry}" | jq -r '.value.titles[0].model')
-              images=$(echo "${entry}" | jq -r '.value.images | map(.name) | join(", ")')
-
-              # 移除Profile对应的字符串
-              images=${images#*$profile}
-
-              # 生成表格行
-              device_table+="| ${profile} | ${vendor} | ${model} | ${images} |\n"
-            done
-            
-            # 记录编译对象设备
-            record_to_markdown "Compiled Devices" "${device_table}"
-          fi
+          device_table=$(jq -r '
+            .profiles | to_entries | [
+              "Profile | Vendor | Model | Images",
+              "--- | --- | --- | ---",
+              (map({
+                profile: .key,
+                vendor: .value.titles[0].vendor,
+                model: .value.titles[0].model,
+                images: (.value.images | map(.name | sub(".*" + .key + ";"; "")) | join(", "))
+              }) | .[] | [.profile, .vendor, .model, .images] | join(" | "))
+            ] | join("\n")
+          ' ${profiles_json_path})
+          record_to_markdown "Compiled Devices" "${device_table}"
 
           cat ${release_md}
           echo "status=success" >> ${GITHUB_OUTPUT}
