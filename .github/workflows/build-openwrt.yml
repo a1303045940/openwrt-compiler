@@ -564,7 +564,7 @@ jobs:
           #     device_table+="| ${profile} |\n"
           #   done <<< "${profiles}"
             
-          #   record_section "Compiled Devices" "${device_table}"
+          #   record_to_markdown "Compiled Devices" "${device_table}"
           # fi
 
           # 记录编译对象设备
@@ -591,7 +591,7 @@ jobs:
             done
             
             # 记录编译对象设备
-            record_section "Compiled Devices" "${device_table}"
+            record_to_markdown "Compiled Devices" "${device_table}"
           fi
 
           cat ${release_md}
