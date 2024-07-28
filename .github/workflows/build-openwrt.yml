@@ -557,16 +557,20 @@ jobs:
 
           # 读取并处理profiles，直接生成Markdown表格，记录编译对象设备
           profiles_json_path="${{ env.path_output }}/profiles.json"
+          # 调试并确认 JSON 文件的结构
+          jq '.' ${profiles_json_path}
           device_table=$(jq -r '
             .profiles | to_entries | [
               "Profile | Vendor | Model | Images",
               "--- | --- | --- | ---",
-              (map({
-                profile: .key,
-                vendor: .value.titles[0].vendor,
-                model: .value.titles[0].model,
-                images: (.value.images | map(.name | sub(".*" + .key + ";"; "")) | join(", "))
-              }) | .[] | [.profile, .vendor, .model, .images] | join(" | "))
+              (
+                map({
+                  profile: .key,
+                  vendor: .value.titles[0].vendor,
+                  model: .value.titles[0].model,
+                  images: (.value.images | map(.name) | join(", "))
+                }) | .[] | [.profile, .vendor, .model, .images] | join(" | ")
+              )
             ] | join("\n")
           ' ${profiles_json_path})
           record_to_markdown "Compiled Devices" "${device_table}"
