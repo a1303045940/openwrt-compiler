@@ -555,25 +555,34 @@ jobs:
             fi
           done
 
-          # 读取并处理profiles，直接生成Markdown表格，记录编译对象设备
+          # 读取profiles.json
           profiles_json_path="${{ env.path_output }}/profiles.json"
-          # 调试并确认 JSON 文件的结构
-          jq '.' ${profiles_json_path}
-          device_table=$(jq -r '
-            .profiles | to_entries | [
-              "Profile | Vendor | Model | Images",
-              "--- | --- | --- | ---",
-              (
-                map({
-                  profile: .key,
-                  vendor: .value.titles[0].vendor,
-                  model: .value.titles[0].model,
-                  images: (.value.images | map(.name) | join(", "))
-                }) | .[] | [.profile, .vendor, .model, .images] | join(" | ")
-              )
-            ] | join("\n")
-          ' ${profiles_json_path})
-          record_to_markdown "Compiled Devices" "${device_table}"
+          profiles_json_content=$(jq '.' "$profiles_json_path")
+          record_to_markdown "Profiles" "$profiles_json_content" "json"
+
+          # # 调试并确认 JSON 文件的结构，Markdown表格记录编译对象设备信息
+          # jq '.' ${profiles_json_path}
+          # # 生成Markdown表格
+          # device_table=$(jq -r '
+          #   .profiles | to_entries | [
+          #     "Profile | Vendor | Model | Device Packages | Images",
+          #     "--- | --- | --- | --- | ---",
+          #     (
+          #       map({
+          #         profile: .key,
+          #         vendor: (.value.titles[0].vendor // "N/A"),
+          #         model: (.value.titles[0].model // "N/A"),
+          #         device_packages: (.value.device_packages | join("<br>") // "N/A"),
+          #         images: (
+          #           .value.image_prefix as $image_prefix |
+          #           .value.images | map(.name | if startswith($image_prefix + "-") then ltrimstr($image_prefix + "-") else . end) | join("<br>")
+          #         )
+          #       }) | .[] | [.profile, .vendor, .model, .device_packages, .images] | join(" | ")
+          #     )
+          #   ] | join("\n")
+          # ' ${profiles_json_path})
+          # record_to_markdown "Compiled Devices" "${device_table}"
+          
 
           cat ${release_md}
           echo "status=success" >> ${GITHUB_OUTPUT}
