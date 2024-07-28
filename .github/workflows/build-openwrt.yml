@@ -561,8 +561,8 @@ jobs:
           record_to_markdown "Profiles" "$profiles_json_content" "json"
 
           # # 调试并确认 JSON 文件的结构，Markdown表格记录编译对象设备信息
+          # 调试并确认 JSON 文件的结构
           # jq '.' ${profiles_json_path}
-          # # 生成Markdown表格
           # device_table=$(jq -r '
           #   .profiles | to_entries | [
           #     "Profile | Vendor | Model | Device Packages | Images",
@@ -583,7 +583,6 @@ jobs:
           # ' ${profiles_json_path})
           # record_to_markdown "Compiled Devices" "${device_table}"
           
-
           cat ${release_md}
           echo "status=success" >> ${GITHUB_OUTPUT}
 
