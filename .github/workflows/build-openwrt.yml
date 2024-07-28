@@ -544,7 +544,8 @@ jobs:
             ["${diy_feeds}"]="feeds setting|bash"
             ["${diy_p1_sh}"]="$(basename "${diy_p1_sh}")|bash"
             ["${diy_p2_sh}"]="$(basename "${diy_p2_sh}")|bash"
-            ["${diy_config}"]="config setting|makefile"
+            ["${diy_config}"]="pre-config|makefile"
+            ["${{ env.path_openwrt }}/.config"]=".config|makefile"
           )
           for file_path in "${!file_records[@]}"; do
             if [[ -f $file_path ]]; then
@@ -559,29 +560,6 @@ jobs:
           profiles_json_path="${{ env.path_output }}/profiles.json"
           profiles_json_content=$(jq '.' "$profiles_json_path")
           record_to_markdown "Profiles" "$profiles_json_content" "json"
-
-          # # 调试并确认 JSON 文件的结构，Markdown表格记录编译对象设备信息
-          # 调试并确认 JSON 文件的结构
-          # jq '.' ${profiles_json_path}
-          # device_table=$(jq -r '
-          #   .profiles | to_entries | [
-          #     "Profile | Vendor | Model | Device Packages | Images",
-          #     "--- | --- | --- | --- | ---",
-          #     (
-          #       map({
-          #         profile: .key,
-          #         vendor: (.value.titles[0].vendor // "N/A"),
-          #         model: (.value.titles[0].model // "N/A"),
-          #         device_packages: (.value.device_packages | join("<br>") // "N/A"),
-          #         images: (
-          #           .value.image_prefix as $image_prefix |
-          #           .value.images | map(.name | if startswith($image_prefix + "-") then ltrimstr($image_prefix + "-") else . end) | join("<br>")
-          #         )
-          #       }) | .[] | [.profile, .vendor, .model, .device_packages, .images] | join(" | ")
-          #     )
-          #   ] | join("\n")
-          # ' ${profiles_json_path})
-          # record_to_markdown "Compiled Devices" "${device_table}"
           
           cat ${release_md}
           echo "status=success" >> ${GITHUB_OUTPUT}
