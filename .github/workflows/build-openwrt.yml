@@ -427,7 +427,7 @@ jobs:
           cat ./.config
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      - name: Apply patches
+      - name: (patches) Apply patches
         id: patch
         working-directory: ${{ env.path_openwrt }}
         env:
