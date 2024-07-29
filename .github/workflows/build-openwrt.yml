@@ -86,20 +86,22 @@ jobs:
           dir_openwrt="openwrt"
           dir_diy="DIY"
           dir_output="output"
+          dir_target="${Target_System}/${Subtarget}/${Target_Profile}"
 
           path_build="/${dir_build}"
           path_openwrt="${path_build}/${dir_openwrt}"
           path_diy="${path_build}/${dir_diy}"
           path_output="${path_build}/${dir_output}"
+          path_target="${path_diy}/${dir_target}"
 
           # DIY Files
-          path_diy_branch="${path_diy}/${Target_System}/${Subtarget}"
-          diy_config="${path_diy_branch}/${Target_Profile}.config"
-          diy_feeds="${path_diy_branch}/feeds.conf.default"
-          diy_p1_sh="${path_diy_branch}/diy-part1.sh"
-          diy_p2_sh="${path_diy_branch}/diy-part2.sh"
-          diy_files="${path_diy_branch}/files"
-          release_md="${path_diy_branch}/release.md"
+          diy_config="${path_target}/${Target_Profile}.config"
+          diy_feeds="${path_target}/feeds.conf.default"
+          diy_p1_sh="${path_target}/diy-part1.sh"
+          diy_p2_sh="${path_target}/diy-part2.sh"
+          diy_files="${path_target}/files"
+          diy_patches="${path_target}/patches"
+          release_md="${path_target}/release.md"
 
           # ========== GITHUB_ENV ==========
           env_vars=(
@@ -115,12 +117,13 @@ jobs:
             "path_openwrt"
             "path_output"
             "path_diy"
-            "path_diy_branch"
+            "path_target"
             "diy_config"
             "diy_feeds"
             "diy_p1_sh"
             "diy_p2_sh"
             "diy_files"
+            "diy_patches"
             "release_md"
           )
           for var in "${env_vars[@]}"; do
@@ -339,7 +342,7 @@ jobs:
           printenv
 
           echo -e "# ========== Path =========="
-          declare -a paths=("${{ env.path_build }}" "${{ env.path_openwrt }}" "${{ env.path_diy }}" "${{ env.path_output }}" "${{ env.path_diy_branch }}")
+          declare -a paths=("${{ env.path_build }}" "${{ env.path_openwrt }}" "${{ env.path_diy }}" "${{ env.path_output }}" "${{ env.path_target }}")
           for path in "${paths[@]}"
           do
             echo "Checking and preparing $path"
@@ -422,6 +425,20 @@ jobs:
 
           yes "" | make oldconfig
           cat ./.config
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Apply patches
+        id: patch
+        working-directory: ${{ env.path_openwrt }}
+        env:
+          diy_patches: ${{ env.diy_patches }}
+        run: |
+          printf "Current working directory: %s\n" "$(pwd)"
+          
+          if [ -d "${diy_patches}" ]; then
+            find "${diy_patches}" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%' | patch -d './' -B --merge -p1 --forward"
+          fi
+          
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: (DIY_P2.sh) after install feeds, before download package
