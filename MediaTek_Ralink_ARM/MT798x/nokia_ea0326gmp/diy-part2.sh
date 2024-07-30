@@ -53,6 +53,7 @@ ORIGINAL_DIR="$PWD"
 if [ "$PWD" != "$DIR" ]; then
     echo "Changing working directory to $DIR"
     cd "$DIR"
+    echo -e "Current working directory: $(pwd)"
 fi
 
 # 创建/patches文件夹（如果不存在）
@@ -66,11 +67,9 @@ fi
 PATCH_URL="https://raw.githubusercontent.com/kiddin9/OpenWrt_x86-r2s-r4s-r5s-N1/master/devices/mediatek_filogic/patches/20-ea0326gmp.patch"
 PATCH_FILE="$PATCH_DIR/20-ea0326gmp.patch"
 
-# 下载补丁文件到/patches文件夹，并强制覆盖已有文件
+# 下载补丁文件到/patches文件夹，并强制覆盖已有文件,检查curl命令是否成功执行
 echo "Downloading patch file to $PATCH_FILE"
 curl -o "$PATCH_FILE" -L "$PATCH_URL"
-
-# 检查curl命令是否成功
 if [ $? -eq 0 ]; then
     echo "Patch file downloaded successfully."
 else
@@ -92,6 +91,7 @@ echo "Changing back to the original directory $ORIGINAL_DIR"
 cd "$ORIGINAL_DIR"
 if [ $? -eq 0 ]; then
     echo "Returned to the original directory successfully."
+    echo -e "Current working directory: $(pwd)"
 else
     echo "Failed to return to the original directory."
     exit 1
