@@ -427,19 +427,19 @@ jobs:
           cat ./.config
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      - name: (patches) Apply patches
-        id: patch
-        working-directory: ${{ env.path_openwrt }}
-        env:
-          diy_patches: ${{ env.diy_patches }}
-        run: |
-          printf "Current working directory: %s\n" "$(pwd)"
+      # - name: (patches) Apply patches
+      #   id: patch
+      #   working-directory: ${{ env.path_openwrt }}
+      #   env:
+      #     diy_patches: ${{ env.diy_patches }}
+      #   run: |
+      #     printf "Current working directory: %s\n" "$(pwd)"
           
-          if [ -d "${diy_patches}" ]; then
-            find "${diy_patches}" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%' | patch -d './' -B --merge -p1 --forward"
-          fi
+      #     if [ -d "${diy_patches}" ]; then
+      #       find "${diy_patches}" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%' | patch -d './' -B --merge -p1 --forward"
+      #     fi
           
-          echo "status=success" >> ${GITHUB_OUTPUT}
+      #     echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: (DIY_P2.sh) after install feeds, before download package
         working-directory: ${{ env.path_openwrt }}
