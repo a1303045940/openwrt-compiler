@@ -25,10 +25,11 @@ jobs:
             },
             {
               workflow: "build-openwrt",
-              OpenWrt_Repository: "github.com/immortalwrt/immortalwrt.git",
-              OpenWrt_Branch: "master",
-              Target_System: "x86",
-              Subtarget: "x86_64",
+              OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git",
+              OpenWrt_Branch: "main",
+              Target_System: "MediaTek_Ralink_ARM",
+              Subtarget: "MT798x",
+              Target_Profile: "nokia_ea0326gmp",
             },
           ]
       fail-fast: false
