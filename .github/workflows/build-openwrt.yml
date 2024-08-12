@@ -56,8 +56,7 @@ on:
 jobs:
   build:
     name: Build Openwrt
-    runs-on: ubuntu-22.04
-    # if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
+    runs-on: ubuntu-latest
     steps:
       - name: Set environment variable
         id: var
