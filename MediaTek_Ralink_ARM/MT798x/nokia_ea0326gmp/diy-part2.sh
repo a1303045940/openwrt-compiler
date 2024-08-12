@@ -86,7 +86,7 @@ else
     exit 1
 fi
 
-# 切换回原来的工作目录
+# 切换回原来的工作目录(默认为openwrt根目录)
 echo "Changing back to the original directory $ORIGINAL_DIR"
 cd "$ORIGINAL_DIR"
 if [ $? -eq 0 ]; then
