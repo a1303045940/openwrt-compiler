@@ -50,9 +50,6 @@ on:
           - "true"
           - "false"
 
-# env:
-# TZ: UTC
-
 jobs:
   build:
     name: Build Openwrt
@@ -268,7 +265,7 @@ jobs:
           sudo -E apt-get -y install "${packages_extra[@]}"
           sudo -E apt-get -qq -y autoremove --purge
           sudo -E apt-get -qq clean
-          
+
           # 设置系统的时区为环境变量 TZ 指定的值
           sudo timedatectl set-timezone "${{ env.TZ }}"
           sudo -E systemctl daemon-reload
@@ -433,11 +430,11 @@ jobs:
       #     diy_patches: ${{ env.diy_patches }}
       #   run: |
       #     printf "Current working directory: %s\n" "$(pwd)"
-          
+
       #     if [ -d "${diy_patches}" ]; then
       #       find "${diy_patches}" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%' | patch -d './' -B --merge -p1 --forward"
       #     fi
-          
+
       #     echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: (DIY_P2.sh) after install feeds, before download package
@@ -575,8 +572,8 @@ jobs:
           # 读取profiles.json
           profiles_json_path="${{ env.path_output }}/profiles.json"
           profiles_json_content=$(jq '.' "$profiles_json_path")
-          record_to_markdown "Profiles" "$profiles_json_content" "json"
-          
+          # record_to_markdown "Profiles" "$profiles_json_content" "json"
+
           cat ${release_md}
           echo "status=success" >> ${GITHUB_OUTPUT}
 
