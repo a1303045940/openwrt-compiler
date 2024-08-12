@@ -22,6 +22,7 @@ jobs:
               OpenWrt_Branch: "main",
               Target_System: "x86",
               Subtarget: "x86_64",
+              Target_Profile: "",
             },
             {
               workflow: "build-openwrt",
@@ -47,7 +48,8 @@ jobs:
               "OpenWrt_Repository": "${{ matrix.config.OpenWrt_Repository }}",
               "OpenWrt_Branch": "${{ matrix.config.OpenWrt_Branch }}",
               "Target_System": "${{ matrix.config.Target_System }}",
-              "Subtarget": "${{ matrix.config.Subtarget }}"
+              "Subtarget": "${{ matrix.config.Subtarget }}",
+              "Target_Profile": "${{ matrix.config.Target_Profile }}"
             }
           }'
           curl -XPOST \
