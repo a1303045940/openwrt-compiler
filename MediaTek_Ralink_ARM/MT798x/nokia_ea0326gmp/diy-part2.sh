@@ -107,6 +107,33 @@ else
     exit 1
 fi
 
+
+# ----- dockerd remove iptables -----
+apply_dockerd_patch_sed() {
+    # 定义目标文件的路径
+    local patch_target="feeds/packages/utils/dockerd/Makefile"
+    patch_target="$(realpath "$patch_target")"
+
+    # 打印当前目标文件内容
+    echo "Original file content:"
+    cat "$patch_target"
+
+    # 使用 sed 删除指定行
+    echo "Applying sed commands to remove iptables dependencies..."
+    sed -i '/+iptables \\/d' "$patch_target"
+    sed -i '/+iptables-mod-extra \\/d' "$patch_target"
+    sed -i '/+IPV6:ip6tables \\/d' "$patch_target"
+    sed -i '/+IPV6:kmod-ipt-nat6 \\/d' "$patch_target"
+    sed -i '/+kmod-ipt-nat \\/d' "$patch_target"
+    sed -i '/+kmod-ipt-physdev \\/d' "$patch_target"
+    sed -i '/+kmod-nf-ipvs \\/d' "$patch_target"
+
+    # 打印修改后的目标文件内容
+    echo "Modified file content:"
+    cat "$patch_target"
+}
+apply_dockerd_patch_sed
+
 # ---------- sync config ----------
 make oldconfig
 cat ./.config
