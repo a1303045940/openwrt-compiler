@@ -134,6 +134,70 @@ apply_dockerd_patch_sed() {
 }
 apply_dockerd_patch_sed
 
+# nftables, abort iptables & xtables
+echo "
+CONFIG_PACKAGE_dnsmasq_full_nftset=y
+CONFIG_DEFAULT_nftables=y
+CONFIG_PACKAGE_miniupnpd-nftables=y
+CONFIG_PACKAGE_nftables-json=y
+CONFIG_PACKAGE_nftables-nojson=n
+
+CONFIG_PACKAGE_ip6tables-nft=n
+CONFIG_PACKAGE_iptables-mod-extra=n
+CONFIG_PACKAGE_iptables-nft=n
+CONFIG_PACKAGE_iptables-mod-tproxy=n
+CONFIG_PACKAGE_kmod-ip6tables=n
+
+CONFIG_PACKAGE_libip4tc=n
+CONFIG_PACKAGE_libip6tc=n
+CONFIG_PACKAGE_libiptext=n
+CONFIG_PACKAGE_libiptext-nft=n
+CONFIG_PACKAGE_libiptext6=n
+
+CONFIG_PACKAGE_libxtables12=n
+CONFIG_PACKAGE_libxtables=n
+CONFIG_PACKAGE_xtables-nft=n
+
+" >> .config
+
+# 删除iptables ip6tables
+# ----- opkg whatdepends -----
+# kmod-ipt-core
+# kmod-ipt-conntrack
+# kmod-ipt-nat
+# kmod-ipt-nat6
+# kmod-ipt-extra
+# kmod-ipt-tproxy
+# kmod-ipt-physdev
+# kmod-nf-ipt
+# kmod-nf-ipt6
+# kmod-br-netfilter
+# kmod-ip6tables
+# kmod-ipt-ipset
+# ipset
+# libipset13
+# kmod-nft-compat
+echo "
+CONFIG_PACKAGE_kmod-ipt-core=n
+CONFIG_PACKAGE_kmod-ipt-conntrack=n
+CONFIG_PACKAGE_kmod-ipt-nat=n
+CONFIG_PACKAGE_kmod-ipt-nat-extra=n
+CONFIG_PACKAGE_kmod-ipt-nat6=n
+CONFIG_PACKAGE_kmod-ipt-extra=n
+CONFIG_PACKAGE_kmod-ipt-tproxy=n
+CONFIG_PACKAGE_kmod-ipt-physdev=n
+CONFIG_PACKAGE_kmod-nf-ipt=n
+CONFIG_PACKAGE_kmod-nf-ipt6=n
+CONFIG_PACKAGE_kmod-nf-ipvs=n
+CONFIG_PACKAGE_kmod-br-netfilter=n
+CONFIG_PACKAGE_kmod-ip6tables=n
+CONFIG_PACKAGE_kmod-ip6tables-extra=n
+CONFIG_PACKAGE_ipset=n
+CONFIG_PACKAGE_kmod-ipt-ipset=n
+CONFIG_PACKAGE_libipset=n
+CONFIG_PACKAGE_kmod-nft-compat=n
+" >> .config
+
 # ---------- sync config ----------
 make oldconfig
 cat ./.config
