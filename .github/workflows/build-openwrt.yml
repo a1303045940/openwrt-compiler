@@ -53,7 +53,7 @@ on:
 jobs:
   build:
     name: Build Openwrt
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Set environment variable
         id: var
@@ -128,45 +128,45 @@ jobs:
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      - name: Clear environment
-        id: clearinit
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        working-directory: /
-        run: |
-          echo -e "Current working directory: $(pwd)"
-          # 删除docker所有镜像
-          docker rmi $(docker images -q) 2>/dev/null
-          # 如果环境变量 AGENT_TOOLSDIRECTORY 不为空，则删除该目录及其所有内容
-          [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
-          # 删除指定的目录及其所有内容，忽略所有错误信息
-          sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
-          # 关闭所有交换空间 删除指定的交换文件
-          sudo swapoff -a
-          sudo rm -f /swapfile /mnt/swapfile
+      # - name: Clear environment
+      #   id: clearinit
+      #   env:
+      #     DEBIAN_FRONTEND: noninteractive
+      #   working-directory: /
+      #   run: |
+      #     echo -e "Current working directory: $(pwd)"
+      #     # 删除docker所有镜像
+      #     docker rmi $(docker images -q) 2>/dev/null
+      #     # 如果环境变量 AGENT_TOOLSDIRECTORY 不为空，则删除该目录及其所有内容
+      #     [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
+      #     # 删除指定的目录及其所有内容，忽略所有错误信息
+      #     sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
+      #     # 关闭所有交换空间 删除指定的交换文件
+      #     sudo swapoff -a
+      #     sudo rm -f /swapfile /mnt/swapfile
 
-          # 删除所有不再需要的软件包及其配置文件, 清理 apt 的缓存
-          packages_purge=(
-            "azure-cli*"
-            "docker*"
-            "ghc*"
-            "zulu*"
-            "llvm*"
-            "firefox"
-            "google*"
-            "dotnet*"
-            "powershell"
-            "openjdk*"
-            "mongodb*"
-            "moby*"
-          )
-          sudo -E apt-get -qq -y update
-          sudo -E apt-get -qq -y purge "${packages_purge[@]}" || true
-          # sudo -E apt-get -qq -y autoremove --purge
-          # sudo -E apt-get -qq clean
+      #     # 删除所有不再需要的软件包及其配置文件, 清理 apt 的缓存
+      #     packages_purge=(
+      #       "azure-cli*"
+      #       "docker*"
+      #       "ghc*"
+      #       "zulu*"
+      #       "llvm*"
+      #       "firefox"
+      #       "google*"
+      #       "dotnet*"
+      #       "powershell"
+      #       "openjdk*"
+      #       "mongodb*"
+      #       "moby*"
+      #     )
+      #     sudo -E apt-get -qq -y update
+      #     sudo -E apt-get -qq -y purge "${packages_purge[@]}" || true
+      #     # sudo -E apt-get -qq -y autoremove --purge
+      #     # sudo -E apt-get -qq clean
 
-          df -Th
-          echo "status=success" >> ${GITHUB_OUTPUT}
+      #     df -Th
+      #     echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Initialization environment
         id: init
