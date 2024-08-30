@@ -53,7 +53,7 @@ on:
 jobs:
   build:
     name: Build Openwrt
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # ubuntu-latest
     steps:
       - name: Set environment variable
         id: var
