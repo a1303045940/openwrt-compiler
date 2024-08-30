@@ -172,7 +172,6 @@ jobs:
         id: init
         env:
           DEBIAN_FRONTEND: noninteractive
-          TZ: UTC
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
@@ -264,9 +263,6 @@ jobs:
           sudo -E apt-get -y install "${packages_extra[@]}"
           # sudo -E apt-get -qq -y autoremove --purge
           # sudo -E apt-get -qq clean
-
-          # sudo timedatectl set-timezone "${{ env.TZ }}"
-          # sudo -E systemctl daemon-reload
 
           # Verify Make version
           make --version
