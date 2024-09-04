@@ -128,45 +128,46 @@ jobs:
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      # - name: Clear environment
-      #   id: clearinit
-      #   env:
-      #     DEBIAN_FRONTEND: noninteractive
-      #   working-directory: /
-      #   run: |
-      #     echo -e "Current working directory: $(pwd)"
-      #     # 删除docker所有镜像
-      #     docker rmi $(docker images -q) 2>/dev/null
-      #     # 如果环境变量 AGENT_TOOLSDIRECTORY 不为空，则删除该目录及其所有内容
-      #     [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
-      #     # 删除指定的目录及其所有内容，忽略所有错误信息
-      #     sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
-      #     # 关闭所有交换空间 删除指定的交换文件
-      #     sudo swapoff -a
-      #     sudo rm -f /swapfile /mnt/swapfile
+      - name: Clear environment
+        id: clearinit
+        if: ${{ 'true' == 'false' }} # disable
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
+          # 删除docker所有镜像
+          docker rmi $(docker images -q) 2>/dev/null
+          # 如果环境变量 AGENT_TOOLSDIRECTORY 不为空，则删除该目录及其所有内容
+          [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
+          # 删除指定的目录及其所有内容，忽略所有错误信息
+          sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
+          # 关闭所有交换空间 删除指定的交换文件
+          sudo swapoff -a
+          sudo rm -f /swapfile /mnt/swapfile
 
-      #     # 删除所有不再需要的软件包及其配置文件, 清理 apt 的缓存
-      #     packages_purge=(
-      #       "azure-cli*"
-      #       "docker*"
-      #       "ghc*"
-      #       "zulu*"
-      #       "llvm*"
-      #       "firefox"
-      #       "google*"
-      #       "dotnet*"
-      #       "powershell"
-      #       "openjdk*"
-      #       "mongodb*"
-      #       "moby*"
-      #     )
-      #     sudo -E apt-get -qq -y update
-      #     sudo -E apt-get -qq -y purge "${packages_purge[@]}" || true
-      #     # sudo -E apt-get -qq -y autoremove --purge
-      #     # sudo -E apt-get -qq clean
+          # 删除所有不再需要的软件包及其配置文件, 清理 apt 的缓存
+          packages_purge=(
+            "azure-cli*"
+            "docker*"
+            "ghc*"
+            "zulu*"
+            "llvm*"
+            "firefox"
+            "google*"
+            "dotnet*"
+            "powershell"
+            "openjdk*"
+            "mongodb*"
+            "moby*"
+          )
+          sudo -E apt-get -qq -y update
+          sudo -E apt-get -qq -y purge "${packages_purge[@]}" || true
+          # sudo -E apt-get -qq -y autoremove --purge
+          # sudo -E apt-get -qq clean
 
-      #     df -Th
-      #     echo "status=success" >> ${GITHUB_OUTPUT}
+          df -Th
+          echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Initialization environment
         id: init
@@ -423,8 +424,7 @@ jobs:
             echo "Listing contents of $path"
             ls -lh "$path"
           done
-
-          # ========== END ==========
+          
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: (feeds.conf.default) Load custom feeds
@@ -601,13 +601,10 @@ jobs:
         run: |
           printf "Current working directory: %s\n" "$(pwd)"
 
-          # 提取release_md变量中的目录路径，检查目录是否存在，如果不存在则创建
           release_md_dir=$(dirname ${release_md})
           mkdir -p ${release_md_dir}
-          # 确保release.md文件存在
           : > ${release_md}
 
-          # 模块化记录函数
           record_to_markdown() {
             local title="$1"
             local content="$2"
@@ -623,12 +620,13 @@ jobs:
           }
 
           # 记录Clone源码的分支和构建者、编译完成时间
-          record_to_markdown "Build ${device_branch} - by ${repo_diy_owner}" ""
+          # record_to_markdown "Build ${Target_Profile} - by ${repo_diy_owner}" ""
           # record_to_markdown "OpenWrt branch" "- [${openwrt_branch};${repo_openwrt_branch}](${repo_openwrt}/tree/${repo_openwrt_branch})"
-          record_to_markdown "Repository" "- [x] ${repo_openwrt}\n- [x] ${repo_openwrt_branch}"
-          record_to_markdown "Build Time" "- [x] $(date +"%Y-%m-%d %H:%M:%S %z")"
+          record_to_markdown "Target" "- [x] ${Target_System} - ${Subtarget} - ${Target_Profile}"
+          record_to_markdown "Timestamp" "- [x] $(date +"%Y-%m-%d %H:%M:%S %z")"
+          record_to_markdown "Repository" "- [x] ${repo_openwrt}"
+          record_to_markdown "Repository Branch" "- [x] ${repo_openwrt_branch}"
 
-          # 使用for循环和关联数组优化记录文件内容的代码
           declare -A file_records=(
             ["${diy_feeds}"]="feeds setting|bash"
             ["${diy_p1_sh}"]="$(basename "${diy_p1_sh}")|bash"
@@ -658,9 +656,7 @@ jobs:
         uses: ncipollo/release-action@main
         if: ${{ steps.output.outputs.status }} == 'success' && !cancelled()
         env:
-          # device_branch: ${{ inputs.device_branch }}
           timestamp: ${{ steps.output.outputs.timestamp }}
-          # release_md: ${{ steps.record.outputs.record }}
         with:
           name: "${{ env.Target_System }}_${{ env.Subtarget }}_${{ env.Target_Profile }}"
           tag: "${{ env.Target_Profile }}"
