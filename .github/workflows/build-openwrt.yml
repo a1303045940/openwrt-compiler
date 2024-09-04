@@ -385,13 +385,6 @@ jobs:
 
           git clone ${repo_openwrt} ${path_openwrt} --single-branch --depth=1 --branch=${repo_openwrt_branch}
           echo -e "repo_openwrt: [ ${repo_openwrt} ]\nBRANCH: [ ${repo_openwrt_branch} ]"
-          
-          repo_url=$(git config --get remote.origin.url)
-          repository=$(basename -s .git ${repo_url})
-          echo -e "Cloned repository: [ ${repository} ]"
-          
-          branch=$(git rev-parse --abbrev-ref HEAD)
-          echo -e "Cloned repository branch: [ ${branch} ]"
 
           df -hT ${PWD}
           echo "status=success" >> ${GITHUB_OUTPUT}
