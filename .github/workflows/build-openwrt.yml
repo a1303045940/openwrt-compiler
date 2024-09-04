@@ -348,8 +348,8 @@ jobs:
 
       - name: Create simulated physical disk
         id: disk
-        working-directory: /
         if: ${{ steps.init.outputs.status }} == 'success' && !cancelled()
+        working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
           # 计算 /mnt 分区的可用空间（减去 1GB 作为缓冲）, 计算根分区的可用空间（减去 4GB 作为缓冲）
@@ -378,21 +378,27 @@ jobs:
 
       - name: Clone OpenWrt
         id: clonesys
-        working-directory: /
         if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
+        working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
 
           git clone ${repo_openwrt} ${path_openwrt} --single-branch --depth=1 --branch=${repo_openwrt_branch}
           echo -e "repo_openwrt: [ ${repo_openwrt} ]\nBRANCH: [ ${repo_openwrt_branch} ]"
 
+          repository=$(basename -s .git $(git config --get remote.origin.url))
+          echo -e "Cloned repository: [ ${repository} ]"
+          
+          branch=$(git rev-parse --abbrev-ref HEAD)
+          echo -e "Cloned repository branch: [ ${branch} ]"
+
           df -hT ${PWD}
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Clone DIY
         id: clonediy
-        working-directory: /
         if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
+        working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
 
@@ -497,19 +503,20 @@ jobs:
           cat ./.config
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      # - name: (patches) Apply patches
-      #   id: patch
-      #   working-directory: ${{ env.path_openwrt }}
-      #   env:
-      #     diy_patches: ${{ env.diy_patches }}
-      #   run: |
-      #     printf "Current working directory: %s\n" "$(pwd)"
+      - name: (patches) Apply patches
+        id: patch
+        if: ${{ 'true' == 'false' }} # disable
+        env:
+          diy_patches: ${{ env.diy_patches }}
+        working-directory: ${{ env.path_openwrt }}
+        run: |
+          printf "Current working directory: %s\n" "$(pwd)"
 
-      #     if [ -d "${diy_patches}" ]; then
-      #       find "${diy_patches}" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%' | patch -d './' -B --merge -p1 --forward"
-      #     fi
+          if [ -d "${diy_patches}" ]; then
+            find "${diy_patches}" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%' | patch -d './' -B --merge -p1 --forward"
+          fi
 
-      #     echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: (DIY_P2.sh) after install feeds, before download package
         working-directory: ${{ env.path_openwrt }}
@@ -623,7 +630,8 @@ jobs:
 
           # 记录Clone源码的分支和构建者、编译完成时间
           record_to_markdown "Build ${device_branch} - by ${repo_diy_owner}" ""
-          record_to_markdown "OpenWrt branch" "- [${openwrt_branch};${repo_openwrt_branch}](${repo_openwrt}/tree/${repo_openwrt_branch})"
+          # record_to_markdown "OpenWrt branch" "- [${openwrt_branch};${repo_openwrt_branch}](${repo_openwrt}/tree/${repo_openwrt_branch})"
+          record_to_markdown "Repository" "- [x] ${repo_openwrt}\n- [x] ${repo_openwrt_branch}"
           record_to_markdown "Build Time" "- [x] $(date +"%Y-%m-%d %H:%M:%S %z")"
 
           # 使用for循环和关联数组优化记录文件内容的代码
@@ -652,6 +660,7 @@ jobs:
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Upload OpenWrt to Release
+        id: release
         uses: ncipollo/release-action@main
         if: ${{ steps.output.outputs.status }} == 'success' && !cancelled()
         env:
@@ -671,6 +680,7 @@ jobs:
 
       - name: Clear workspace
         id: clearwork
+        if: ${{ 'true' == 'false' }} # disable
         working-directory: ${{ env.path_build }}
         run: |
           # rm -rf $(ls . | grep -v "^output$" | xargs) 2>/dev/null
