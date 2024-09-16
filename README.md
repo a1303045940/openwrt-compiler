@@ -1,2 +1,2 @@
-# openwrt-x86
-OpenWrt targets x86 with Actions
+# openwrt-compiler
+Github Actions for OpenWrt Compile, targets x86/mt798x
