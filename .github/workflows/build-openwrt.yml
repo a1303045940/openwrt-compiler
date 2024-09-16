@@ -128,7 +128,6 @@ jobs:
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      
       - name: Clear environment
         id: clearinit
         # if: ${{ 'true' == 'false' }} # disable
@@ -154,26 +153,50 @@ jobs:
           sudo swapoff -a
           sudo rm -f /swapfile /mnt/swapfile
 
-          # 删除所有不再需要的软件包及其配置文件, 清理 apt 的缓存
+          # ===== Remove snap =====
+          for p in $(snap list | awk '{print $1}'); do
+            sudo snap remove $p
+          done
+          sudo systemctl stop snapd
+          sudo systemctl disable --now snapd.socket
+          sudo apt-get -qq -y autoremove --purge snapd
+          sudo rm -rf ~/snap
+          sudo rm -rf /snap
+          sudo rm -rf /var/snap
+          sudo rm -rf /var/lib/snapd
+          sudo rm -rf /var/cache/snapd
+          sudo bash -c 'cat <<EOF > /etc/apt/preferences.d/nosnap.pref
+          Package: snapd
+          Pin: release a=*
+          Pin-Priority: -10
+          EOF'
+
+          # ===== Clean apt =====
           packages_purge=(
-            "azure-cli*"
             "docker*"
             "ghc*"
             "zulu*"
-            "llvm*"
-            "firefox"
             "google*"
+            "firefox*"
             "dotnet*"
-            "powershell"
+            "powershell*"
             "openjdk*"
             "mongodb*"
             "moby*"
+            "mysql*"
+            "postgresql*"
+            "sqlite3*"
+            "apache2*"
+            "nginx*"
+            "php*"
           )
           sudo -E apt-get -qq -y update
           sudo -E apt-get -qq -y purge "${packages_purge[@]}" || true
           sudo -E apt-get -qq -y autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
+          apt list --installed
+          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n
 
           df -Th
           echo "status=success" >> ${GITHUB_OUTPUT}
@@ -451,7 +474,7 @@ jobs:
             echo "Listing contents of $path"
             ls -lh "$path"
           done
-          
+
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: (feeds.conf.default) Load custom feeds
