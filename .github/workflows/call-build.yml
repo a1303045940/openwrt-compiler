@@ -17,7 +17,6 @@ jobs:
         config:
           [
             {
-              workflow: "build-openwrt",
               OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git",
               OpenWrt_Branch: "main",
               Target_System: "x86",
@@ -25,7 +24,6 @@ jobs:
               Target_Profile: "",
             },
             {
-              workflow: "build-openwrt",
               OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git",
               OpenWrt_Branch: "main",
               Target_System: "MediaTek_Ralink_ARM",
@@ -33,7 +31,6 @@ jobs:
               Target_Profile: "",
             },
             {
-              workflow: "build-openwrt",
               OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git",
               OpenWrt_Branch: "main",
               Target_System: "MediaTek_Ralink_ARM",
@@ -44,24 +41,36 @@ jobs:
       fail-fast: false
     steps:
       - name: Trigger workflow
-        id: build
-        working-directory: /
+        id: trigger
         env:
-          workflow: ${{ matrix.config.workflow }}
+          branch: "main"
+          workflow: "build-openwrt"
+        working-directory: /
         run: |
-          data='
-          {
-            "ref": "main",
-            "inputs": {
-              "OpenWrt_Repository": "${{ matrix.config.OpenWrt_Repository }}",
-              "OpenWrt_Branch": "${{ matrix.config.OpenWrt_Branch }}",
-              "Target_System": "${{ matrix.config.Target_System }}",
-              "Subtarget": "${{ matrix.config.Subtarget }}",
-              "Target_Profile": "${{ matrix.config.Target_Profile }}"
-            }
-          }'
-          curl -XPOST \
-          -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: Bearer ${{ secrets.PAT }}" \
-          https://api.github.com/repos/${{ github.repository }}/actions/workflows/${{ env.workflow }}.yml/dispatches \
-          --data "$data"
+          # Create base JSON using jq
+          data=$(jq -n \
+            --arg OpenWrt_Repository "${{ matrix.config.OpenWrt_Repository }}" \
+            --arg OpenWrt_Branch "${{ matrix.config.OpenWrt_Branch }}" \
+            --arg Target_System "${{ matrix.config.Target_System }}" \
+            --arg Subtarget "${{ matrix.config.Subtarget }}" \
+            --arg Target_Profile "${{ matrix.config.Target_Profile }}" \
+            '{
+              ref: "${{ env.branch }}",
+              inputs: {
+                OpenWrt_Repository: $OpenWrt_Repository,
+                OpenWrt_Branch: $OpenWrt_Branch,
+                Target_System: $Target_System,
+                Subtarget: $Subtarget,
+                Target_Profile: $Target_Profile
+              }
+            }')
+
+          # Output the final JSON data for debugging (optional)
+          echo "$data" | jq .
+          
+          # Use the generated data with curl
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: Bearer ${{ secrets.PAT }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/${{ env.workflow }}.yml/dispatches \
+            --data "$data"
