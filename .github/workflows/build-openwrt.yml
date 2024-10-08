@@ -50,7 +50,7 @@ on:
           - "true"
           - "false"
 
-run-name: ${{ inputs.OpenWrt_Branch }} - ${{ inputs.Target_System }} - ${{ inputs.Subtarget }} - ${{ inputs.Target_Profile || 'Null' }}
+run-name: Openwrt - ${{ inputs.OpenWrt_Branch }} - ${{ inputs.Target_System }} - ${{ inputs.Subtarget }} - ${{ inputs.Target_Profile || 'Null' }}
 
 jobs:
   build:
