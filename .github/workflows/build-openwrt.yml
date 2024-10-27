@@ -187,24 +187,6 @@ jobs:
           sudo swapoff -a
           sudo rm -f /swapfile /mnt/swapfile
 
-          # ===== Remove snap =====
-          for p in $(snap list | awk '{print $1}'); do
-            sudo snap remove $p
-          done
-          sudo systemctl stop snapd
-          sudo systemctl disable --now snapd.socket
-          sudo apt-get -qq -y autoremove --purge snapd
-          sudo rm -rf ~/snap
-          sudo rm -rf /snap
-          sudo rm -rf /var/snap
-          sudo rm -rf /var/lib/snapd
-          sudo rm -rf /var/cache/snapd
-          sudo bash -c 'cat <<EOF > /etc/apt/preferences.d/nosnap.pref
-          Package: snapd
-          Pin: release a=*
-          Pin-Priority: -10
-          EOF'
-
           # ===== Clean apt =====
           packages_purge=(
             "docker*"
