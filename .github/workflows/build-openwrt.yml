@@ -130,6 +130,38 @@ jobs:
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
+      - name: Clean Snap
+        id: clean-snap
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          sudo -E apt-get -qq -y update
+          sudo snap list
+
+          # ===== Remove snap =====
+          for p in $(snap list | awk '{print $1}'); do
+            sudo snap remove $p
+          done
+          sudo systemctl stop snapd
+          sudo systemctl disable --now snapd.socket
+          sudo apt-get -qq -y autoremove --purge snapd
+          sudo rm -rf ~/snap
+          sudo rm -rf /snap
+          sudo rm -rf /var/snap
+          sudo rm -rf /var/lib/snapd
+          sudo rm -rf /var/cache/snapd
+          sudo bash -c 'cat <<EOF > /etc/apt/preferences.d/nosnap.pref
+          Package: snapd
+          Pin: release a=*
+          Pin-Priority: -10
+          EOF'
+          sudo -E systemctl daemon-reload
+
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
       - name: Clear environment
         id: clearinit
         # if: ${{ 'true' == 'false' }} # disable
@@ -348,79 +380,81 @@ jobs:
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      - name: Switch GNU C++ Version
-        id: gcc
-        if: ${{ 'true' == 'false' }} # disable
+      - name: Switch for GNU C++ & AArch64 Cross-Compiler
+        id: switch-gcc
+        # if: ${{ 'true' == 'false' }} # disable
         env:
           DEBIAN_FRONTEND: noninteractive
-          selected_version: "14"
-        working-directory: /
+          gcc_version: ${{ env.gcc_version || '14' }}
         run: |
+          echo -e "Current working directory: $(pwd)"
+
+          sudo -E apt-get -yqq update
+
           packages_install=(
-            "gcc-${selected_version}"
-            "g++-${selected_version}"
-            "gcc-${selected_version}-multilib"
-            "g++-${selected_version}-multilib"
+            "gcc-${gcc_version}"
+            "g++-${gcc_version}"
+            "gcc-${gcc_version}-multilib"
+            "g++-${gcc_version}-multilib"
+            "gcc-${gcc_version}-aarch64-linux-gnu"
+            "cpp-${gcc_version}-aarch64-linux-gnu"
           )
-          packages_extra=(
-            "gcc-${selected_version}-aarch64-linux-gnu"
+          sudo -E apt-get -yqq install "${packages_install[@]}"
+
+          # 设置 update-alternatives 以管理不同版本的GCC、G++和AArch64工具
+          ls /usr/bin/gcc-* /usr/bin/g++-*
+          tools_gcc=(
+            "gcc"
+            "gcc-ar"
+            "gcc-nm"
+            "gcc-ranlib"
+            "g++"
           )
-          sudo -E apt-get -y -qq update
-          sudo -E apt-get -y -qq install "${packages_install[@]}"
-          sudo -E apt-get -y -qq install "${packages_extra[@]}"
-          sudo -E systemctl daemon-reload
-
-          # List GCC version
-          ls /usr/bin/gcc-*
-          ls /usr/bin/g++-*
-
-          # Setup update-alternatives for GCC
-          gcc_version=$(ls /usr/bin/gcc-* | grep -oP '(?<=gcc-)\d+' | sort -u)
-          echo "Available GCC Version: ${gcc_version}"
-          for version in ${gcc_version}; do
-            if [ -f /usr/bin/gcc-${version} ]; then
-              sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${version} ${version}
-            fi
-            if [ -f /usr/bin/gcc-ar-${version} ]; then
-              sudo update-alternatives --install /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-${version} ${version}
-            fi
-            if [ -f /usr/bin/gcc-nm-${version} ]; then
-              sudo update-alternatives --install /usr/bin/gcc-nm gcc-nm /usr/bin/gcc-nm-${version} ${version}
-            fi
-            if [ -f /usr/bin/gcc-ranlib-${version} ]; then
-              sudo update-alternatives --install /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-${version} ${version}
-            fi
-            # if [ -f /usr/bin/g++-${version} ]; then
-            #   sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${version} ${version}
-            # fi
-            # if [ -f /usr/bin/gcc-${version}-aarch64-linux-gnu ]; then
-            #   sudo update-alternatives --install /usr/bin/gcc-aarch64-linux-gnu gcc-aarch64-linux-gnu /usr/bin/gcc-${selected_version}-aarch64-linux-gnu ${version}
-            # fi
+          for tool in "${tools_gcc[@]}"; do
+            versions=$(ls /usr/bin/${tool}-* | grep -Eo '[0-9]+$' | sort -u)
+            for version in ${versions}; do
+              sudo update-alternatives --install /usr/bin/${tool} ${tool} /usr/bin/${tool}-${version} ${version}
+            done
           done
           sudo update-alternatives --query gcc
-
-          # Setup update-alternatives for G++
-          gpp_versions=$(ls /usr/bin/g++-* | grep -Eo '[0-9]+$' | sort -u)
-          echo "Available G++ versions: ${gpp_versions}"
-          for version in ${gpp_versions}; do
-            if [ -f /usr/bin/g++-${version} ]; then
-              sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${version} ${version}
-            fi
-          done
           sudo update-alternatives --query g++
-
-          # Switch to selected version
-          sudo update-alternatives --set gcc /usr/bin/gcc-${selected_version}
-          sudo update-alternatives --set gcc-ar /usr/bin/gcc-ar-${selected_version}
-          sudo update-alternatives --set gcc-nm /usr/bin/gcc-nm-${selected_version}
-          sudo update-alternatives --set gcc-ranlib /usr/bin/gcc-ranlib-${selected_version}
-          # G++
-          sudo update-alternatives --set g++ /usr/bin/g++-${selected_version}
-          echo "Switched to GCC/G++ version ${selected_version}."
-
+          # 切换到所需版本
+          for tool in "${tools_gcc[@]}"; do
+            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${gcc_version}
+          done
+          # 验证版本
           gcc --version
           g++ --version
 
+          # AArch64专用设置，涵盖所有带版本号的aarch64-linux-gnu工具
+          ls /usr/bin/aarch64-linux-gnu-*
+          tools_aarch64=(
+            "aarch64-linux-gnu-gcc"
+            "aarch64-linux-gnu-cpp"
+            "aarch64-linux-gnu-gcc-ar"
+            "aarch64-linux-gnu-gcc-nm"
+            "aarch64-linux-gnu-gcc-ranlib"
+            "aarch64-linux-gnu-gcov"
+            "aarch64-linux-gnu-gcov-dump"
+            "aarch64-linux-gnu-gcov-tool"
+            "aarch64-linux-gnu-lto-dump"
+          )
+          for tool in "${tools_aarch64[@]}"; do
+            versions=$(ls /usr/bin/${tool}-* 2>/dev/null | grep -Eo '[0-9]+$' | sort -u)
+            for version in ${versions}; do
+              sudo update-alternatives --install /usr/bin/${tool} ${tool} /usr/bin/${tool}-${version} ${version}
+            done
+          done
+          sudo update-alternatives --query aarch64-linux-gnu-gcc
+          # 切换到所需版本
+          for tool in "${tools_aarch64[@]}"; do
+            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${gcc_version}
+          done
+
+          # 验证版本
+          aarch64-linux-gnu-gcc --version
+
+          echo "Switched to GCC/G++ and AArch64 GCC version ${gcc_version}."
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Create simulated physical disk
