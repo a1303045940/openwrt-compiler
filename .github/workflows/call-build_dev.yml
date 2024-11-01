@@ -29,6 +29,11 @@ jobs:
       fail-fast: false
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 1
+
       - name: Call Build Workflow
         uses: ./.github/workflows/build-openwrt.yml
         with:
