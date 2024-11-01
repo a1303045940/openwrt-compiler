@@ -4,29 +4,25 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_x86:
+  build:
     uses: ./.github/workflows/build-openwrt_dev.yml
+    strategy:
+      matrix:
+        build_params:
+          - { Target_System: "x86", Subtarget: "x86_64", Target_Profile: "" }
+          - {
+              Target_System: "MediaTek_Ralink_ARM",
+              Subtarget: "MT798x",
+              Target_Profile: "",
+            }
+          - {
+              Target_System: "MediaTek_Ralink_ARM",
+              Subtarget: "MT798x",
+              Target_Profile: "nokia_ea0326gmp",
+            }
     with:
       OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git"
       OpenWrt_Branch: "main"
-      Target_System: "x86"
-      Subtarget: "x86_64"
-      Target_Profile: ""
-
-  build_mt798x:
-    uses: ./.github/workflows/build-openwrt_dev.yml
-    with:
-      OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git"
-      OpenWrt_Branch: "main"
-      Target_System: "MediaTek_Ralink_ARM"
-      Subtarget: "MT798x"
-      Target_Profile: ""
-
-  build_nokia:
-    uses: ./.github/workflows/build-openwrt_dev.yml
-    with:
-      OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git"
-      OpenWrt_Branch: "main"
-      Target_System: "MediaTek_Ralink_ARM"
-      Subtarget: "MT798x"
-      Target_Profile: "nokia_ea0326gmp"
+      Target_System: ${{ matrix.build_params.Target_System }}
+      Subtarget: ${{ matrix.build_params.Subtarget }}
+      Target_Profile: ${{ matrix.build_params.Target_Profile }}
