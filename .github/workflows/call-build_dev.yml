@@ -5,7 +5,7 @@ on:
 
 jobs:
   build_x86:
-    uses: ./.github/workflows/build-openwrt.yml
+    uses: ./.github/workflows/build-openwrt_dev.yml
     with:
       OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git"
       OpenWrt_Branch: "main"
@@ -14,7 +14,7 @@ jobs:
       Target_Profile: ""
 
   build_mt798x:
-    uses: ./.github/workflows/build-openwrt.yml
+    uses: ./.github/workflows/build-openwrt_dev.yml
     with:
       OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git"
       OpenWrt_Branch: "main"
@@ -23,7 +23,7 @@ jobs:
       Target_Profile: ""
 
   build_nokia:
-    uses: ./.github/workflows/build-openwrt.yml
+    uses: ./.github/workflows/build-openwrt_dev.yml
     with:
       OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git"
       OpenWrt_Branch: "main"
