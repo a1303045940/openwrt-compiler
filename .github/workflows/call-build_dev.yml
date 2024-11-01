@@ -1,44 +1,32 @@
 name: Call Build (Dev)
 
 on:
-  # schedule:
-  #   - cron: "0 0 * * *"
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        config:
-          - OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git"
-            OpenWrt_Branch: "main"
-            Target_System: "x86"
-            Subtarget: "x86_64"
-            Target_Profile: ""
-          - OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git"
-            OpenWrt_Branch: "main"
-            Target_System: "MediaTek_Ralink_ARM"
-            Subtarget: "MT798x"
-            Target_Profile: ""
-          - OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git"
-            OpenWrt_Branch: "main"
-            Target_System: "MediaTek_Ralink_ARM"
-            Subtarget: "MT798x"
-            Target_Profile: "nokia_ea0326gmp"
-      fail-fast: false
+  build_x86:
+    uses: ./.github/workflows/build-openwrt.yml
+    with:
+      OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git"
+      OpenWrt_Branch: "main"
+      Target_System: "x86"
+      Subtarget: "x86_64"
+      Target_Profile: ""
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@main
-        with:
-          fetch-depth: 1
+  build_mt798x:
+    uses: ./.github/workflows/build-openwrt.yml
+    with:
+      OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git"
+      OpenWrt_Branch: "main"
+      Target_System: "MediaTek_Ralink_ARM"
+      Subtarget: "MT798x"
+      Target_Profile: ""
 
-      - name: Call Build Workflow
-        uses: ./.github/workflows/build-openwrt.yml
-        with:
-          OpenWrt_Repository: ${{ matrix.config.OpenWrt_Repository }}
-          OpenWrt_Branch: ${{ matrix.config.OpenWrt_Branch }}
-          Target_System: ${{ matrix.config.Target_System }}
-          Subtarget: ${{ matrix.config.Subtarget }}
-          Target_Profile: ${{ matrix.config.Target_Profile }}
+  build_nokia:
+    uses: ./.github/workflows/build-openwrt.yml
+    with:
+      OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git"
+      OpenWrt_Branch: "main"
+      Target_System: "MediaTek_Ralink_ARM"
+      Subtarget: "MT798x"
+      Target_Profile: "nokia_ea0326gmp"
