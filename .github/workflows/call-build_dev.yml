@@ -5,7 +5,7 @@ on:
 
 jobs:
   openwrt:
-    name: Branch to Build
+    name: Target
     uses: ./.github/workflows/build-openwrt_dev.yml
     strategy:
       matrix:
