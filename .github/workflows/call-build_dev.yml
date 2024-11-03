@@ -3,10 +3,6 @@ name: Call Build (Dev)
 on:
   workflow_dispatch:
 
-env:
-  Branch_Snapshot: "main"
-  Branch_Release: "openwrt-24.10"
-
 jobs:
   openwrt:
     name: Snapshot
@@ -14,8 +10,8 @@ jobs:
     strategy:
       matrix:
         Branch:
-          - ${{ env.Branch_Snapshot }}
-          - ${{ env.Branch_Release }}
+          - "main"
+          - "openwrt-23.05"
         build_params:
           - Target_System: "x86"
             Subtarget: "x86_64"
