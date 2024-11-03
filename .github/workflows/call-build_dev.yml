@@ -9,9 +9,7 @@ jobs:
     uses: ./.github/workflows/build-openwrt_dev.yml
     strategy:
       matrix:
-        Branch:
-          - "main"
-          - "openwrt-23.05"
+        Branch: ["main", "openwrt-23.05"]
         build_params:
           - Target_System: "x86"
             Subtarget: "x86_64"
