@@ -7,7 +7,7 @@ run-name: Build Matrix for OpenWrt
 
 jobs:
   openwrt:
-    name: OpenWrt ${{ matrix.Branch }} - ${{ matrix.build_params.Target_System }} - ${{ matrix.build_params.Subtarget }} - ${{ matrix.build_params.Target_Profile }}
+    name: OpenWrt Branch - ${{ matrix.Branch }}
     uses: ./.github/workflows/build-openwrt_dev.yml
     strategy:
       fail-fast: false
