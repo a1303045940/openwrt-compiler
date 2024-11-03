@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        Branch: ["main", "openwrt-23.05"]
+        Branch: ["main", "openwrt-24.10"]
         inputs_params:
           - Target_System: "x86"
             Subtarget: "x86_64"
