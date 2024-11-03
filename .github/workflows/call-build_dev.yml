@@ -5,11 +5,11 @@ on:
 
 env:
   OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git"
-  Workflow_Path: ".github/workflows/build-openwrt_dev.yml"
 
 jobs:
   snapshot:
     name: Snapshot
+    uses: ./.github/workflows/build-openwrt_dev.yml
     strategy:
       matrix:
         build_params:
@@ -22,7 +22,6 @@ jobs:
           - Target_System: "MediaTek_Ralink_ARM"
             Subtarget: "MT798x"
             Target_Profile: "nokia_ea0326gmp"
-    uses: ${{ env.Workflow_Path }}
     with:
       OpenWrt_Repository: ${{ env.OpenWrt_Repository }}
       OpenWrt_Branch: "main"
@@ -32,6 +31,7 @@ jobs:
 
   stable:
     name: Stable
+    uses: ./.github/workflows/build-openwrt_dev.yml
     strategy:
       matrix:
         build_params:
@@ -44,7 +44,6 @@ jobs:
           - Target_System: "MediaTek_Ralink_ARM"
             Subtarget: "MT798x"
             Target_Profile: "nokia_ea0326gmp"
-    uses: ${{ env.Workflow_Path }}
     with:
       OpenWrt_Repository: ${{ env.OpenWrt_Repository }}
       OpenWrt_Branch: "openwrt-23.05"
