@@ -10,6 +10,7 @@ jobs:
     name: Target
     uses: ./.github/workflows/build-openwrt_dev.yml
     strategy:
+      fail-fast: false
       matrix:
         Branch: ["main", "openwrt-23.05"]
         build_params:
