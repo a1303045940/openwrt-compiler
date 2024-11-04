@@ -192,11 +192,11 @@ jobs:
           docker image list
           docker image prune -a -f
 
+          # ===== Clean Apt =====
+          # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
           sudo -E apt-get -yqq update
           package_installed=$(dpkg-query -W -f='${binary:Package}\n')
 
-          # ===== Clean Apt =====
-          # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
           # ----- package for purge -----
           packages_purge=(
             "docker*"
@@ -308,6 +308,11 @@ jobs:
           )
           echo "Packages to be installed: ${packages_install[@]}"
           sudo -E apt-get -yqq install "${packages_install[@]}"
+
+          # ===== reload =====
+          sudo -E apt-get -yqq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo -E systemctl daemon-reload
 
           # 验证版本
           gcc --version
@@ -839,22 +844,41 @@ jobs:
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Copy to output
-        id: copy
+        id: output
         working-directory: /
         env:
           PATH_TARGET: ${{ env.path_openwrt }}/bin/targets/*/*/*
-        if: ${{ steps.compile.outputs.status }} == 'success' && !cancelled()
         run: |
           echo -e "Current working directory: $(pwd)"
           [[ -e "${path_output}" ]] || mkdir -p ${path_output}
           cp -rf ${PATH_TARGET} ${path_output}/
           cp -f ${path_openwrt}/.config ${path_output}/config
+
+          echo -e "timestamp=$(date +"%y%mw%V")" >> ${GITHUB_OUTPUT}
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      - name: Setup output
-        id: output
+      - name: Version of the kernel
+        id: version-kernel
         working-directory: ${{ env.path_output }}
-        if: ${{ steps.copy.outputs.status }} == 'success' && !cancelled()
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          # 查找 packages 目录中的 kernel IPK 文件
+          KERNEL_IPK=$(find packages -name 'kernel_*.ipk' | head -n 1)
+          echo "找到的内核 IPK 文件: $KERNEL_IPK"
+          # 提取文件名
+          FILENAME=$(basename "$KERNEL_IPK")
+          # 使用 '~' 获取前一段
+          PART_BEFORE_TILDE=${FILENAME%%~*}
+          # 去掉开头的 'kernel_'，得到最终结果
+          KERNEL_VERSION=${PART_BEFORE_TILDE#kernel_}
+          echo "内核版本号: $KERNEL_VERSION"
+
+          echo "version=$KERNEL_VERSION" | tee -a $GITHUB_OUTPUT
+
+      - name: Clean output
+        id: clean-output
+        working-directory: ${{ env.path_output }}
         run: |
           echo -e "Current working directory: $(pwd)"
 
@@ -870,7 +894,6 @@ jobs:
           #   fi
           # done
 
-          echo -e "timestamp=$(date +"%y%mw%V")" >> ${GITHUB_OUTPUT}
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: "[release.md] Record release.md"
@@ -935,9 +958,10 @@ jobs:
         if: ${{ steps.output.outputs.status }} == 'success' && !cancelled()
         env:
           timestamp: ${{ steps.output.outputs.timestamp }}
+          version_kernel: ${{ steps.version-kernel.outputs.version }}
         with:
-          name: "${{ inputs.OpenWrt_Branch }}_${{ env.Target_System }}_${{ env.Subtarget }}_${{ env.Target_Profile }}"
-          tag: "${{ env.Target_Profile }}"
+          name: "${{ inputs.OpenWrt_Branch }}_${{ env.version_kernel }}_${{ env.Target_System }}_${{ env.Subtarget }}_${{ env.Target_Profile }}"
+          tag: "${{ env.Target_Profile }}_${{ inputs.OpenWrt_Branch }}"
           artifacts: "${{ env.path_output }}/*"
           allowUpdates: true
           removeArtifacts: false
