@@ -72,7 +72,7 @@ run-name: Openwrt - ${{ inputs.OpenWrt_Branch }} - ${{ inputs.Target_System }} -
 
 jobs:
   build:
-    name: Build Openwrt - ${{ inputs.OpenWrt_Branch }} - ${{ inputs.Target_System }} - ${{ inputs.Subtarget }} - ${{ inputs.Target_Profile || inputs.Subtarget }}
+    name: Openwrt - ${{ inputs.OpenWrt_Branch }} - ${{ inputs.Target_System }} - ${{ inputs.Subtarget }} - ${{ inputs.Target_Profile || inputs.Subtarget }}
     runs-on: ubuntu-24.04
     steps:
       - name: Set environment variable
@@ -515,7 +515,6 @@ jobs:
 
       - name: Switch for GNU C++ & AArch64 Cross-Compiler
         id: switch-gcc
-        # if: ${{ 'true' == 'false' }} # disable
         env:
           DEBIAN_FRONTEND: noninteractive
           gcc_version: ${{ env.gcc_version || '14' }}
@@ -919,7 +918,7 @@ jobs:
         env:
           timestamp: ${{ steps.output.outputs.timestamp }}
         with:
-          name: "${{ env.Target_System }}_${{ env.Subtarget }}_${{ env.Target_Profile }}"
+          name: "${{ inputs.OpenWrt_Branch }}_${{ env.Target_System }}_${{ env.Subtarget }}_${{ env.Target_Profile }}"
           tag: "${{ env.Target_Profile }}"
           artifacts: "${{ env.path_output }}/*"
           allowUpdates: true
