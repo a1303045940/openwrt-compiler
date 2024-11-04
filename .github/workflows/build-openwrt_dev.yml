@@ -402,7 +402,7 @@ jobs:
             "gawk"
             "g++"
             "gcc"
-            "gcc-aarch64-linux-gnu"
+            # "gcc-aarch64-linux-gnu"
             "git"
             "git-lfs"
             "gnupg"
@@ -478,7 +478,7 @@ jobs:
             "flex"
             "g++"
             "gcc"
-            "gcc-aarch64-linux-gnu"
+            # "gcc-aarch64-linux-gnu"
             "git"
             "git-lfs"
             "gnupg"
@@ -561,6 +561,7 @@ jobs:
       
       - name: Switch AArch64 Cross-Compiler
         id: switch-aarch64-gcc
+        if: ${{ inputs.Target_System == 'MediaTek_Ralink_ARM' }}
         env:
           DEBIAN_FRONTEND: noninteractive
           gcc_version: ${{ env.gcc_version || '14' }}
