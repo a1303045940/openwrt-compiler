@@ -156,7 +156,7 @@ jobs:
         run: |
           echo -e "Current working directory: $(pwd)"
 
-          sudo -E apt-get -qq -y update
+          sudo -E apt-get -yqq update
           sudo snap list
 
           # ===== Remove snap =====
@@ -165,7 +165,7 @@ jobs:
           done
           sudo systemctl stop snapd
           sudo systemctl disable --now snapd.socket
-          sudo apt-get -qq -y autoremove --purge snapd
+          sudo apt-get -yqq autoremove --purge snapd
           sudo rm -rf ~/snap
           sudo rm -rf /snap
           sudo rm -rf /var/snap
@@ -180,32 +180,24 @@ jobs:
 
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      - name: Clear environment
-        id: clearinit
-        # if: ${{ 'true' == 'false' }} # disable
+      - name: Clean Runner
+        id: clean-runner
         env:
           DEBIAN_FRONTEND: noninteractive
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
 
+          # ===== Clean Docker =====
           docker image list
-          # 删除docker所有镜像
-          # for image in $(docker images -q); do
-          #   docker rmi -f $image
-          # done
-          # 删除所有不再使用的 docker 镜像、容器、网络和数据卷
-          docker image prune -a
+          docker image prune -a -f
 
-          # 如果环境变量 AGENT_TOOLSDIRECTORY 不为空，则删除该目录及其所有内容
-          [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
-          # 删除指定的目录及其所有内容，忽略所有错误信息
-          # sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
-          # 关闭所有交换空间 删除指定的交换文件
-          sudo swapoff -a
-          sudo rm -f /swapfile /mnt/swapfile
+          sudo -E apt-get -yqq update
+          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
 
-          # ===== Clean apt =====
+          # ===== Clean Apt =====
+          # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
+          # ----- package for purge -----
           packages_purge=(
             "docker*"
             "ghc*"
@@ -214,23 +206,164 @@ jobs:
             "firefox*"
             "dotnet*"
             "powershell*"
-            "openjdk*"
+            "microsoft-edge*"
+            "sqlite*"
+            "postgresql*"
+            "mysql*"
             "mongodb*"
             "moby*"
-            "mysql*"
-            "postgresql*"
-            "sqlite3*"
             "apache2*"
             "nginx*"
             "php*"
           )
-          sudo -E apt-get -qq -y update
-          sudo -E apt-get -qq -y purge "${packages_purge[@]}" || true
+          sudo -E apt-get -yqq autoremove --purge "${packages_purge[@]}"
+
+          # ===== Clean Browsers and Drivers =====
+          sudo -E rm -rf /usr/local/share/chromedriver-linux64
+          sudo -E rm -rf /usr/local/share/chromium
+          sudo -E rm -rf /usr/local/share/edge_driver
+          sudo -E rm -rf /usr/local/share/gecko_driver
+          sudo -E rm -rf /usr/share/java/selenium-server.jar
+
+          # ===== Clean PowerShell Tools =====
+          sudo -E rm -rf /usr/local/share/powershell
+
+          # ===== Clean Android Tools =====
+          sudo find /usr/local/lib/android/sdk/ndk/ -type d -regex '.*/2[0-6].*' -exec rm -rf {} +
+          
+          # ===== Clean AGENT_TOOLSDIRECTORY =====
+          # 如果环境变量 AGENT_TOOLSDIRECTORY 不为空，则删除该目录及其所有内容
+          [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
+
+          # ===== Clean Swap =====
+          # 关闭所有交换空间 删除指定的交换文件
+          sudo swapoff -a
+          sudo rm -f /swapfile /mnt/swapfile
+
+          # ===== reload =====
+          sudo -E apt-get -yqq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo -E systemctl daemon-reload
+
+          df -Th
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Clean GCC
+        id: clean-gcc
+        if: ${{ 'true' == 'false' }} # disable
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          VERSION_GCC: 14
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          sudo -E apt-get -yqq update
+          
+          # ----- Language and Runtime -----
+          regexes=(
+            "clang-[0-9]+.*"
+            "clang-format-[0-9]+.*"
+            "clang-tidy-[0-9]+.*"
+            "gcc-[0-9]+.*"
+            "libgcc-[0-9]+.*"
+            "g++-[0-9]+.*"
+            "cpp-[0-9]+.*"
+            "libstdc++-[0-9]+.*"
+            "gfortran-[0-9]+.*"
+            "libgfortran-[0-9]+.*"
+          )
+          packages_purge=()
+          for regex in "${regexes[@]}"; do
+            for package in $package_installed; do
+              if [[ $package =~ $regex ]]; then
+                  packages_purge+=("$package")
+              fi
+            done
+          done
+
+          echo "Packages to be purged: ${packages_purge[@]}"
+          set +e
+          for package in "${packages_purge[@]}"; do
+            echo "Attempting to remove $package"
+            sudo -E apt-get -yqq autoremove --purge $package
+            if [[ $? -ne 0 ]]; then
+              echo "Failed to remove $package"
+            fi
+          done
+          set -e
+
+          packages_install=(
+            # ----- Language and Runtime -----
+            "clang"
+            "clang-format"
+            "clang-tidy"
+            "gcc"
+            "libgcc-${{ env.VERSION_GCC }}-dev"
+            "g++"
+            "cpp"
+            "libstdc++-${{ env.VERSION_GCC }}-dev"
+            "gfortran"
+            "libgfortran-${{ env.VERSION_GCC }}-dev"
+          )
+          echo "Packages to be installed: ${packages_install[@]}"
+          sudo -E apt-get -yqq install "${packages_install[@]}"
+
+          # 验证版本
+          gcc --version
+          g++ --version
+
+          df -Th
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Clean JDK
+        id: clean-jdk
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          VERSION_JDK: 21
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          sudo -E apt-get -yqq update
+          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
+
+          # ----- package for re-install -----
+          regexes=(
+            "temurin-[0-9]+-jdk"
+            "openjdk-[0-9]+.*"
+            "zulu*"
+          )
+          packages_purge=()
+          for regex in "${regexes[@]}"; do
+            for package in $package_installed; do
+              if [[ $package =~ $regex ]]; then
+                  packages_purge+=("$package")
+              fi
+            done
+          done
+
+          echo "Packages to be purged: ${packages_purge[@]}"
+          set +e
+          for package in "${packages_purge[@]}"; do
+            echo "Attempting to remove $package"
+            sudo -E apt-get -yqq autoremove --purge $package
+            if [[ $? -ne 0 ]]; then
+              echo "Failed to remove $package"
+            fi
+          done
+          set -e
+
+          packages_install=(
+            "openjdk-${{ env.VERSION_JDK }}-jdk"
+          )
+          echo "Packages to be installed: ${packages_install[@]}"
+          sudo -E apt-get -qq -y install "${packages_install[@]}"
+
+          # ===== reload =====
           sudo -E apt-get -qq -y autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
-          apt list --installed
-          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n
 
           df -Th
           echo "status=success" >> ${GITHUB_OUTPUT}
@@ -366,10 +499,10 @@ jobs:
             "zip"
             "zlib1g-dev"
           )
-          sudo -E apt-get -y -qq update
-          sudo -E apt-get -y -qq install "${packages_install[@]}"
-          # sudo -E apt-get -y -qq install "${packages_slim[@]}"
-          sudo -E apt-get -qq -y autoremove --purge
+          sudo -E apt-get -yqq update
+          sudo -E apt-get -yqq install "${packages_install[@]}"
+          # sudo -E apt-get -yqq install "${packages_slim[@]}"
+          sudo -E apt-get -yqq autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
 
