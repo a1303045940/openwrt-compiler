@@ -2,7 +2,8 @@ name: Call Build (Dev)
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    # Run every day at 21:00 UTC
+    - cron: "0 21 * * *"
   repository_dispatch:
   workflow_dispatch:
 
