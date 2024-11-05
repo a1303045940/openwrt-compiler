@@ -37,14 +37,14 @@ on:
         required: false
         default: ""
         type: string
-      continue_on_error:
-        description: "Continue compiling on error? (true/false)"
-        required: false
-        default: "false"
-        type: choice
-        options:
-          - "true"
-          - "false"
+      # continue_on_error:
+      #   description: "Continue compiling on error? (true/false)"
+      #   required: false
+      #   default: "false"
+      #   type: choice
+      #   options:
+      #     - "true"
+      #     - "false"
   workflow_call:
     inputs:
       OpenWrt_Repository:
@@ -81,7 +81,7 @@ jobs:
         run: |
           echo -e "Current working directory: $(pwd)"
 
-          continue_on_error="${{ inputs.continue_on_error || 'false' }}"
+          # continue_on_error="${{ inputs.continue_on_error || 'false' }}"
 
           # ========== Openwrt make menuconfig ==========
           Target_System="${{ inputs.Target_System }}"
@@ -121,7 +121,7 @@ jobs:
 
           # ========== GITHUB_ENV ==========
           env_vars=(
-            "continue_on_error"
+            # "continue_on_error"
             "repo_openwrt"
             "repo_openwrt_branch"
             "repo_diy"
@@ -836,11 +836,12 @@ jobs:
         run: |
           echo -e "Current working directory: $(pwd)"
           echo -e "$(($(nproc) + 1)) thread compile"
-          if [ "${{ env.continue_on_error }}" == "true" ]; then
-            make -j$(($(nproc) + 1)) V=s -k
-          else
-            make -j$(($(nproc) + 1)) V=s
-          fi
+          # if [ "${{ env.continue_on_error }}" == "true" ]; then
+          #   make -j$(($(nproc) + 1)) V=s -k
+          # else
+          #   make -j$(($(nproc) + 1)) V=s
+          # fi
+          make -j$(($(nproc) + 1)) V=s
           echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Copy to output
