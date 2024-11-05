@@ -3,7 +3,7 @@ name: Call Build (Dev)
 on:
   workflow_dispatch:
 
-run-name: Build Matrix for OpenWrt
+run-name: Build started at ${{ format(now(), 'yyyy-MM-dd HH:mm:ss') }}
 
 jobs:
   openwrt:
