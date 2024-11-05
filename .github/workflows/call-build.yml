@@ -1,8 +1,8 @@
 name: Call Build
 
 on:
-  schedule:
-    - cron: "0 0 * * *"
+  # schedule:
+  #   - cron: "0 0 * * *"
   repository_dispatch:
   workflow_dispatch:
 
@@ -67,7 +67,7 @@ jobs:
 
           # Output the final JSON data for debugging (optional)
           echo "$data" | jq .
-          
+
           # Use the generated data with curl
           curl -X POST \
             -H "Accept: application/vnd.github.v3+json" \
