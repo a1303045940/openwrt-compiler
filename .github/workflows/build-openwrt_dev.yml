@@ -612,6 +612,10 @@ jobs:
           echo "Switched to AArch64 GCC version ${gcc_version}."
           echo "status=success" >> ${GITHUB_OUTPUT}
 
+      - name: Setup QEMU
+        id: qemu
+        uses: docker/setup-qemu-action@master
+
       - name: Create simulated physical disk
         id: disk
         env:
