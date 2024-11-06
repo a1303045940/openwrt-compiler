@@ -965,8 +965,8 @@ jobs:
           timestamp: ${{ steps.output.outputs.timestamp }}
           version_kernel: ${{ steps.version-kernel.outputs.version }}
         with:
-          name: "${{ env.Target_System }}-${{ env.Subtarget }}-${{ env.Target_Profile }}+${{ inputs.OpenWrt_Branch }}+${{ env.version_kernel }}"
-          tag: "${{ inputs.OpenWrt_Branch }}+${{ env.Target_Profile }}"
+          name: "${{ inputs.OpenWrt_Branch }}+${{ env.Target_System }}+${{ env.Subtarget }}+${{ env.Target_Profile }}"
+          tag: "${{ env.version_kernel }}"
           artifacts: "${{ env.path_output }}/*"
           allowUpdates: true
           removeArtifacts: false
