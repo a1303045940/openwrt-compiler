@@ -614,7 +614,7 @@ jobs:
 
       - name: Setup Docker
         id: docker
-        # if: ${{ 'true' == 'false' }} # disable
+        if: ${{ 'true' == 'false' }} # disable
         env:
           DEBIAN_FRONTEND: noninteractive
         working-directory: /
@@ -644,7 +644,7 @@ jobs:
 
       - name: Setup QEMU
         id: qemu
-        # if: ${{ 'true' == 'false' }} # disable
+        if: ${{ 'true' == 'false' }} # disable
         uses: docker/setup-qemu-action@master
         # with:
         #   platforms: ${{ env.arch_branch }}
