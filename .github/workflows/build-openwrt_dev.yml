@@ -37,14 +37,6 @@ on:
         required: false
         default: ""
         type: string
-      # continue_on_error:
-      #   description: "Continue compiling on error? (true/false)"
-      #   required: false
-      #   default: "false"
-      #   type: choice
-      #   options:
-      #     - "true"
-      #     - "false"
   workflow_call:
     inputs:
       OpenWrt_Repository:
