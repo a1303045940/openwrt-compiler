@@ -65,7 +65,7 @@ run-name: Openwrt - ${{ inputs.OpenWrt_Branch }} - ${{ inputs.Target_System }} -
 jobs:
   build:
     name: Openwrt - ${{ inputs.OpenWrt_Branch }} - ${{ inputs.Target_System }} - ${{ inputs.Subtarget }} - ${{ inputs.Target_Profile || inputs.Subtarget }}
-    runs-on: ubuntu-24.04
+    runs-on: ${{ inputs.runner-image || 'ubuntu-latest' }}
     steps:
       - name: Set environment variable
         id: var
