@@ -1,5 +1,8 @@
 name: Call Build (Dev)
 
+# https://docs.github.com/zh/actions/writing-workflows/workflow-syntax-for-github-actions
+run-name: Build Matrix for OpenWrt
+
 on:
   schedule:
     # Run every day at 21:00 UTC
@@ -7,18 +10,29 @@ on:
   repository_dispatch:
   workflow_dispatch:
 
-run-name: Build Matrix for OpenWrt
+# permissions: {}
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.ref }}
+#   cancel-in-progress: true
 
 jobs:
   openwrt:
     name: ${{ matrix.openwrt_branch }}
+    runs-on: ubuntu-latest
+    # continue-on-error: true
+    # concurrency:
+    #   group: example-group
+    #   cancel-in-progress: true
     uses: ./.github/workflows/build-openwrt_dev.yml
+    # secrets: inherit
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
         runner_image: ["ubuntu-24.04"]
+        openwrt_repo: ["git.openwrt.org/openwrt/openwrt.git"]
         openwrt_branch: ["main", "openwrt-24.10"]
-        inputs_params:
+        workflows_inputs:
           - Target_System: "x86"
             Subtarget: "x86_64"
             Target_Profile: ""
@@ -29,9 +43,12 @@ jobs:
             Subtarget: "MT798x"
             Target_Profile: "nokia_ea0326gmp"
     with:
-      OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git"
-      OpenWrt_Branch: ${{ matrix.openwrt_branch }}
-      Target_System: ${{ matrix.inputs_params.Target_System }}
-      Subtarget: ${{ matrix.inputs_params.Subtarget }}
-      Target_Profile: ${{ matrix.inputs_params.Target_Profile }}
       runner_image: ${{ matrix.runner_image }} # || 'ubuntu-24.04'
+      OpenWrt_Repository: ${{ matrix.openwrt_repo }}
+      OpenWrt_Branch: ${{ matrix.openwrt_branch }}
+      Target_System: ${{ matrix.workflows_inputs.Target_System }}
+      Subtarget: ${{ matrix.workflows_inputs.Subtarget }}
+      Target_Profile: ${{ matrix.workflows_inputs.Target_Profile }}
+    # secrets:
+    #   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+    #   DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
