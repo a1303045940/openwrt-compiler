@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner_image: ["ubuntu-24.04"]
+        # runner_image: ["ubuntu-24.04"]
         openwrt_branch: ["main", "openwrt-24.10"]
         inputs_params:
           - Target_System: "x86"
@@ -34,4 +34,4 @@ jobs:
       Target_System: ${{ matrix.inputs_params.Target_System }}
       Subtarget: ${{ matrix.inputs_params.Subtarget }}
       Target_Profile: ${{ matrix.inputs_params.Target_Profile }}
-      runner_image: ${{ matrix.runner_image }}
+      runner_image: ${{ matrix.runner_image || 'ubuntu-24.04' }}
