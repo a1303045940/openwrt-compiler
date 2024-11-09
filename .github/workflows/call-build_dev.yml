@@ -16,7 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        Branch: ["main", "openwrt-24.10"]
+        runner_image: ["ubuntu-24.04"]
+        openwrt_branch: ["main", "openwrt-24.10"]
         inputs_params:
           - Target_System: "x86"
             Subtarget: "x86_64"
@@ -29,8 +30,8 @@ jobs:
             Target_Profile: "nokia_ea0326gmp"
     with:
       OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git"
-      OpenWrt_Branch: ${{ matrix.Branch }}
+      OpenWrt_Branch: ${{ matrix.openwrt_branch }}
       Target_System: ${{ matrix.inputs_params.Target_System }}
       Subtarget: ${{ matrix.inputs_params.Subtarget }}
       Target_Profile: ${{ matrix.inputs_params.Target_Profile }}
-      runner-image: ${{ matrix.inputs_params.runner_image || 'ubuntu-24.04' }}
+      runner_image: ${{ matrix.runner_image }}

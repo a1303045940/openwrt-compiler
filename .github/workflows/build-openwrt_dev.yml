@@ -37,7 +37,7 @@ on:
         required: false
         default: ""
         type: string
-      runner-image:
+      runner_image:
         description: "Runner Image"
         type: string
         required: false
@@ -64,7 +64,7 @@ on:
         description: "Target Profile"
         required: false
         type: string
-      runner-image:
+      runner_image:
         description: "Runner Image"
         required: false
         type: string
@@ -74,7 +74,7 @@ run-name: Openwrt - ${{ inputs.OpenWrt_Branch }} - ${{ inputs.Target_System }} -
 jobs:
   build:
     name: Openwrt - ${{ inputs.OpenWrt_Branch }} - ${{ inputs.Target_System }} - ${{ inputs.Subtarget }} - ${{ inputs.Target_Profile || inputs.Subtarget }}
-    runs-on: ${{ inputs.runner-image || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.runner_image || 'ubuntu-latest' }}
     steps:
       - name: Set environment variable
         id: var
