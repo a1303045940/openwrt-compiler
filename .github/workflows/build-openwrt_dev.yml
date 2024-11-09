@@ -37,6 +37,11 @@ on:
         required: false
         default: ""
         type: string
+      runner-image:
+        description: "Runner Image"
+        type: string
+        required: false
+        default: "ubuntu-latest"
   workflow_call:
     inputs:
       OpenWrt_Repository:
@@ -57,6 +62,10 @@ on:
         type: string
       Target_Profile:
         description: "Target Profile"
+        required: false
+        type: string
+      runner-image:
+        description: "Runner Image"
         required: false
         type: string
 
