@@ -889,8 +889,14 @@ jobs:
           PATH_TARGET: ${{ env.path_openwrt }}/bin/targets/*/*/*
         run: |
           echo -e "Current working directory: $(pwd)"
+
           [[ -e "${path_output}" ]] || mkdir -p ${path_output}
+
+          echo "复制 ${PATH_TARGET} 到: ${path_output}/"
           cp -rf ${PATH_TARGET} ${path_output}/
+          ls -lhR ${path_output}/
+
+          echo "复制 ${path_openwrt}/.config 到: ${path_output}/config"
           cp -f ${path_openwrt}/.config ${path_output}/config
 
           echo -e "timestamp=$(date +"%y%mw%V")" >> ${GITHUB_OUTPUT}
@@ -902,18 +908,18 @@ jobs:
         run: |
           echo -e "Current working directory: $(pwd)"
 
-          # 查找 packages 目录中的 kernel IPK 文件
-          KERNEL_IPK=$(find packages -name 'kernel_*.ipk' | head -n 1)
-          echo "找到的内核 IPK 文件: $KERNEL_IPK"
+          # 查找 packages 目录中的 kernel文件
+          Package_Kernel=$(find packages -name 'kernel_*.*' | head -n 1)
+          echo "内核 文件: ${Package_Kernel}"
           # 提取文件名
-          FILENAME=$(basename "$KERNEL_IPK")
+          Filename_Kernel=$(basename "${Package_Kernel}")
           # 使用 '~' 获取前一段
-          PART_BEFORE_TILDE=${FILENAME%%~*}
+          PART_BEFORE_TILDE=${Filename_Kernel%%~*}
           # 去掉开头的 'kernel_'，得到最终结果
-          KERNEL_VERSION=${PART_BEFORE_TILDE#kernel_}
-          echo "内核版本号: $KERNEL_VERSION"
+          Version_Kernel=${PART_BEFORE_TILDE#kernel_}
+          echo "内核版本号: $Version_Kernel"
 
-          echo "version=$KERNEL_VERSION" | tee -a $GITHUB_OUTPUT
+          echo "version=$Version_Kernel" | tee -a $GITHUB_OUTPUT
 
       - name: Clean output
         id: clean-output

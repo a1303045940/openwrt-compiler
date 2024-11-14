@@ -10,11 +10,6 @@ on:
   repository_dispatch:
   workflow_dispatch:
 
-# permissions: {}
-# concurrency:
-#   group: ${{ github.workflow }}-${{ github.ref }}
-#   cancel-in-progress: true
-
 jobs:
   openwrt:
     name: ${{ matrix.openwrt_branch }}
@@ -48,6 +43,3 @@ jobs:
       Target_System: ${{ matrix.workflows_inputs.Target_System }}
       Subtarget: ${{ matrix.workflows_inputs.Subtarget }}
       Target_Profile: ${{ matrix.workflows_inputs.Target_Profile }}
-    # secrets:
-    #   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-    #   DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
