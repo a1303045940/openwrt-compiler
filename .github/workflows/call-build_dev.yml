@@ -12,16 +12,22 @@ on:
 
 jobs:
   heads:
-    runs-on: ubuntu-latest
-    env:
-      REPO_URL: https://git.openwrt.org/openwrt/openwrt.git
+    name: ${{ matrix.repo_target }}
+    runs-on: ${{ matrix.runner_image || 'ubuntu-latest' }}
+    # env:
+    #   REPO_URL: https://git.openwrt.org/openwrt/openwrt.git
     outputs:
       latest_branch: ${{ steps.find_latest.outputs.latest_branch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner_image: ["ubuntu-latest"]
+        repo_target: ["git.openwrt.org/openwrt/openwrt.git"]
     steps:
       - name: Get the latest openwrt version branch
         id: find_latest
         run: |
-          latest_version=$(git ls-remote --heads ${{ env.REPO_URL }} \
+          latest_version=$(git ls-remote --heads ${{ matrix.repo_target }} \
             | grep 'refs/heads/openwrt-[0-9]\+\.[0-9]\+$' \
             | sed 's/.*refs\/heads\/openwrt-//' \
             | sort -V \
