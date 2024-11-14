@@ -1,7 +1,7 @@
 name: Heads (Dev)
 
 # https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions
-run-name: Heads of Repository
+# run-name: Heads of Repository
 
 on:
   repository_dispatch:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   heads:
-    name: ${{ matrix.repo_target }}
+    name: Heads of ${{ matrix.repo_target }}
     runs-on: ${{ matrix.runner_image || 'ubuntu-latest' }}
     outputs:
       latest_branch: ${{ steps.find_latest.outputs.latest_branch }}
