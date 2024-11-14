@@ -1,6 +1,6 @@
 name: Heads (Dev)
 
-# https://docs.github.com/zh/actions/writing-workflows/workflow-syntax-for-github-actions
+# https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions
 run-name: Heads of Repository
 
 on:
@@ -12,8 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REPO_URL: https://git.openwrt.org/openwrt/openwrt.git
+    outputs:
+      latest_branch: ${{ steps.find_latest.outputs.latest_branch }}
     steps:
-      - name: 获取最新的 openwrt 版本分支
+      - name: Get the latest openwrt version branch
         id: find_latest
         run: |
           latest_version=$(git ls-remote --heads ${{ env.REPO_URL }} \
@@ -23,5 +25,7 @@ jobs:
             | tail -n1)
           echo "latest_branch=openwrt-$latest_version" >> $GITHUB_OUTPUT
 
-      - name: 输出最新分支
-        run: echo "最新的分支是 ${{ steps.find_latest.outputs.latest_branch }}"
+      - name: Check the latest branch
+        id: check
+        run: |
+          echo "The latest branch is: ${{ steps.find_latest.outputs.latest_branch }}"
