@@ -908,18 +908,27 @@ jobs:
         run: |
           echo -e "Current working directory: $(pwd)"
 
-          # 查找 packages 目录中的 kernel文件
-          Package_Kernel=$(find packages -name 'kernel_*.*' | head -n 1)
-          echo "内核 文件: ${Package_Kernel}"
-          # 提取文件名
-          Filename_Kernel=$(basename "${Package_Kernel}")
-          # 使用 '~' 获取前一段
-          PART_BEFORE_TILDE=${Filename_Kernel%%~*}
-          # 去掉开头的 'kernel_'，得到最终结果
-          Version_Kernel=${PART_BEFORE_TILDE#kernel_}
-          echo "内核版本号: $Version_Kernel"
+          # 查找 packages 目录中的 kernel 文件
+          Package_Kernel=$(find packages -name 'kernel[-_]*.*pk' | head -n 1)
+          echo "Kernel file: ${Package_Kernel}"
 
-          echo "version=$Version_Kernel" | tee -a $GITHUB_OUTPUT
+          if [ -n "$Package_Kernel" ]; then
+            # 提取文件名
+            Filename_Kernel=$(basename "${Package_Kernel}")
+            echo "Filename: ${Filename_Kernel}"
+            
+            # 使用 '~' 获取前一段
+            PART_BEFORE_TILDE=${Filename_Kernel%%~*}
+            echo "Part before tilde: ${PART_BEFORE_TILDE}"
+            
+            # 去掉开头的 'kernel-' 或 'kernel_'
+            Version_Kernel=${PART_BEFORE_TILDE#kernel[-_]}
+            echo "Kernel version: $Version_Kernel"
+            
+            echo "version=$Version_Kernel" | tee -a $GITHUB_OUTPUT
+          else
+            echo "No kernel file found."
+          fi
 
       - name: Clean output
         id: clean-output
