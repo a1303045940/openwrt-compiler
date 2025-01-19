@@ -158,6 +158,152 @@ jobs:
         run: |
           echo "${{ env.custom_env }}" | tr '${{ env.flag_split }}' '\n' | tee -a $GITHUB_ENV
 
+      - name: Initialization environment
+        id: init
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          packages_install=(
+            "ack"
+            "antlr3"
+            "asciidoc"
+            "autoconf"
+            "automake"
+            "autopoint"
+            "bc"
+            "binutils"
+            "bison"
+            "build-essential"
+            "bzip2"
+            "ca-certificates"
+            # "clang"
+            # "clangd"
+            "cmake"
+            "cpio"
+            "curl"
+            "device-tree-compiler"
+            "dwarves"
+            "ecj"
+            "fastjar"
+            "flex"
+            "gawk"
+            # "g++"
+            # "gcc"
+            # "gcc-aarch64-linux-gnu"
+            "git"
+            "git-lfs"
+            "gnupg"
+            "gperf"
+            "haveged"
+            "help2man"
+            "intltool"
+            "jq"
+            "libelf-dev"
+            "libglib2.0-dev"
+            "libgmp3-dev"
+            "libltdl-dev"
+            "libmpc-dev"
+            "libmpfr-dev"
+            "libncurses5-dev"
+            "libreadline-dev"
+            "libssl-dev"
+            "libtool"
+            "libxml2"
+            "libxml2-utils"
+            "lld"
+            "lldb"
+            "lz4"
+            "lzop"
+            "make"
+            "mkisofs"
+            "ninja-build"
+            "p7zip-full"
+            "patch"
+            "pkgconf"
+            "python3"
+            "python3-pip"
+            "re2c"
+            "rsync"
+            "schedtool"
+            "scons"
+            "squashfs-tools"
+            "subversion"
+            "swig"
+            "uglifyjs"
+            "unzip"
+            "vim"
+            "wget"
+            "xsltproc"
+            "zip"
+            "zlib1g-dev"
+          )
+          # Commented out packages (sorted):
+          # "ccache"
+          # "lib32gcc-s1"
+          # "libc6-dev-i386"
+          # "libdb++-dev"
+          # "gcc-multilib"
+          # "g++-multilib"
+          # "libncursesw5"
+          # "libncursesw5-dev"
+          # "lrzsz"
+          # "msmtp"
+          # "nano"
+          # "p7zip"
+          # "python3-docutils"
+          # "python3-ply"
+          # "qemu-utils"
+          # "texinfo"
+          # "xmlto"
+          # "xxd"
+          packages_slim=(
+            "bc"
+            "bison"
+            "build-essential"
+            "ca-certificates"
+            "curl"
+            "flex"
+            # "g++"
+            # "gcc"
+            # "gcc-aarch64-linux-gnu"
+            "git"
+            "git-lfs"
+            "gnupg"
+            "gperf"
+            "libelf-dev"
+            "lz4"
+            "libssl-dev"
+            "libxml2"
+            "libxml2-utils"
+            "lzop"
+            "make"
+            "python3"
+            "rsync"
+            "schedtool"
+            "squashfs-tools"
+            "vim"
+            "xsltproc"
+            "zip"
+            "zlib1g-dev"
+          )
+          sudo -E apt-get -yqq update
+          sudo -E apt-get -yqq install "${packages_install[@]}"
+          # sudo -E apt-get -yqq install "${packages_slim[@]}"
+          sudo -E apt-get -yqq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo -E systemctl daemon-reload
+
+          # Verify Make version
+          make --version
+          # Verify GCC version
+          gcc --version
+          g++ --version
+
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
+
       # ========== Clean up environment ==========
       - name: Clean Snap
         id: clean-snap
@@ -619,7 +765,7 @@ jobs:
 
           sudo -E apt-get -yqq update
           package_installed=$(dpkg-query -W -f='${binary:Package}\n')
-          
+
           packages_install=(
             "gcc-${{ env.version_gcc }}-aarch64-linux-gnu"
             "cpp-${{ env.version_gcc }}-aarch64-linux-gnu"
@@ -693,152 +839,6 @@ jobs:
         uses: docker/setup-qemu-action@master
         # with:
         #   platforms: ${{ env.arch_branch }}
-
-      - name: Initialization environment
-        id: init
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        working-directory: /
-        run: |
-          echo -e "Current working directory: $(pwd)"
-
-          packages_install=(
-            "ack"
-            "antlr3"
-            "asciidoc"
-            "autoconf"
-            "automake"
-            "autopoint"
-            "bc"
-            "binutils"
-            "bison"
-            "build-essential"
-            "bzip2"
-            "ca-certificates"
-            # "clang"
-            # "clangd"
-            "cmake"
-            "cpio"
-            "curl"
-            "device-tree-compiler"
-            "dwarves"
-            "ecj"
-            "fastjar"
-            "flex"
-            "gawk"
-            # "g++"
-            # "gcc"
-            # "gcc-aarch64-linux-gnu"
-            "git"
-            "git-lfs"
-            "gnupg"
-            "gperf"
-            "haveged"
-            "help2man"
-            "intltool"
-            "jq"
-            "libelf-dev"
-            "libglib2.0-dev"
-            "libgmp3-dev"
-            "libltdl-dev"
-            "libmpc-dev"
-            "libmpfr-dev"
-            "libncurses5-dev"
-            "libreadline-dev"
-            "libssl-dev"
-            "libtool"
-            "libxml2"
-            "libxml2-utils"
-            "lld"
-            "lldb"
-            "lz4"
-            "lzop"
-            "make"
-            "mkisofs"
-            "ninja-build"
-            "p7zip-full"
-            "patch"
-            "pkgconf"
-            "python3"
-            "python3-pip"
-            "re2c"
-            "rsync"
-            "schedtool"
-            "scons"
-            "squashfs-tools"
-            "subversion"
-            "swig"
-            "uglifyjs"
-            "unzip"
-            "vim"
-            "wget"
-            "xsltproc"
-            "zip"
-            "zlib1g-dev"
-          )
-          # Commented out packages (sorted):
-          # "ccache"
-          # "lib32gcc-s1"
-          # "libc6-dev-i386"
-          # "libdb++-dev"
-          # "gcc-multilib"
-          # "g++-multilib"
-          # "libncursesw5"
-          # "libncursesw5-dev"
-          # "lrzsz"
-          # "msmtp"
-          # "nano"
-          # "p7zip"
-          # "python3-docutils"
-          # "python3-ply"
-          # "qemu-utils"
-          # "texinfo"
-          # "xmlto"
-          # "xxd"
-          packages_slim=(
-            "bc"
-            "bison"
-            "build-essential"
-            "ca-certificates"
-            "curl"
-            "flex"
-            # "g++"
-            # "gcc"
-            # "gcc-aarch64-linux-gnu"
-            "git"
-            "git-lfs"
-            "gnupg"
-            "gperf"
-            "libelf-dev"
-            "lz4"
-            "libssl-dev"
-            "libxml2"
-            "libxml2-utils"
-            "lzop"
-            "make"
-            "python3"
-            "rsync"
-            "schedtool"
-            "squashfs-tools"
-            "vim"
-            "xsltproc"
-            "zip"
-            "zlib1g-dev"
-          )
-          sudo -E apt-get -yqq update
-          sudo -E apt-get -yqq install "${packages_install[@]}"
-          # sudo -E apt-get -yqq install "${packages_slim[@]}"
-          sudo -E apt-get -yqq autoremove --purge
-          sudo -E apt-get -qq clean
-          sudo -E systemctl daemon-reload
-
-          # Verify Make version
-          make --version
-          # Verify GCC version
-          gcc --version
-          g++ --version
-
-          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Create simulated physical disk
         id: disk
