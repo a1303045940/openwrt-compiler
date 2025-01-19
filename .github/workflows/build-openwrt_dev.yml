@@ -147,7 +147,7 @@ jobs:
             echo "${var}=${!var}" | tee -a $GITHUB_ENV
           done
 
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Clean Snap
         id: clean-snap
@@ -179,10 +179,10 @@ jobs:
           EOF'
           sudo -E systemctl daemon-reload
 
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
-      - name: Clean Runner
-        id: clean-runner
+      - name: Clean Docker
+        id: clean-docker
         env:
           DEBIAN_FRONTEND: noninteractive
         working-directory: /
@@ -192,6 +192,16 @@ jobs:
           # ===== Clean Docker =====
           docker image list
           docker image prune -a -f
+
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
+
+      - name: Clean Runner
+        id: clean-runner
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
 
           # ===== Clean Apt =====
           # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
@@ -247,7 +257,7 @@ jobs:
           sudo -E systemctl daemon-reload
 
           df -Th
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Clean GCC
         id: clean-gcc
@@ -320,7 +330,7 @@ jobs:
           g++ --version
 
           df -Th
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Clean JDK
         id: clean-jdk
@@ -372,7 +382,7 @@ jobs:
           sudo -E systemctl daemon-reload
 
           df -Th
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Initialization environment
         id: init
@@ -517,7 +527,7 @@ jobs:
           # Verify GCC version
           gcc --version
 
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Switch GNU C++ Compiler
         id: switch-gcc
@@ -563,7 +573,7 @@ jobs:
           g++ --version
 
           echo "Switched to GCC/G++ version ${gcc_version}."
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Switch AArch64 Cross-Compiler
         id: switch-aarch64-gcc
@@ -611,7 +621,7 @@ jobs:
           aarch64-linux-gnu-gcc --version
 
           echo "Switched to AArch64 GCC version ${gcc_version}."
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Setup Docker
         id: docker
@@ -709,7 +719,7 @@ jobs:
           echo -e "repo_openwrt: [ ${repo_openwrt} ]\nBRANCH: [ ${repo_openwrt_branch} ]"
 
           df -hT ${PWD}
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Clone DIY
         id: clonediy
@@ -722,7 +732,7 @@ jobs:
           echo -e "repo_diy: [ ${repo_diy} ]\nBRANCH: [ main ]"
 
           df -hT ${PWD}
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Check environment
         id: checkenv
@@ -746,7 +756,7 @@ jobs:
             ls -lh "$path"
           done
 
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: (feeds.conf.default) Load custom feeds
         working-directory: ${{ env.path_openwrt }}
@@ -777,7 +787,7 @@ jobs:
           echo -e "Current working directory: $(pwd)"
           cat ./feeds.conf.default
           ./scripts/feeds update -a
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Install feeds
         id: install
@@ -786,7 +796,7 @@ jobs:
         run: |
           echo -e "Current working directory: $(pwd)"
           ./scripts/feeds install -a
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: (/files) Load custom files
         id: files
@@ -799,7 +809,7 @@ jobs:
               cp -rf ${diy_files}/* ./files/
           fi
 
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: (.config) Load custom configuration
         id: config
@@ -816,7 +826,7 @@ jobs:
 
           yes "" | make oldconfig
           cat ./.config
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: (patches) Apply patches
         id: patch
@@ -831,7 +841,7 @@ jobs:
             find "${diy_patches}" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%' | patch -d './' -B --merge -p1 --forward"
           fi
 
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: (DIY_P2.sh) after install feeds, before download package
         working-directory: ${{ env.path_openwrt }}
@@ -853,7 +863,7 @@ jobs:
           echo "make oldconfig: update .config file..."
           yes "" | make oldconfig
           cat ./.config
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Download package
         id: package
@@ -865,7 +875,7 @@ jobs:
           make download -j$(($(nproc) + 1))
           # find dl -size -1024c -exec ls -l {} \;
           # find dl -size -1024c -exec rm -f {} \;
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Compile the OpenWrt
         id: compile
@@ -880,7 +890,7 @@ jobs:
           #   make -j$(($(nproc) + 1)) V=s
           # fi
           make -j$(($(nproc) + 1)) V=s
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Copy to output
         id: output
@@ -900,7 +910,7 @@ jobs:
           cp -f ${path_openwrt}/.config ${path_output}/config
 
           echo -e "timestamp=$(date +"%y%mw%V")" >> ${GITHUB_OUTPUT}
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Version of the kernel
         id: version-kernel
@@ -948,7 +958,7 @@ jobs:
           #   fi
           # done
 
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: "[release.md] Record release.md"
         id: record
@@ -1004,7 +1014,7 @@ jobs:
           # record_to_markdown "Profiles" "$profiles_json_content" "json"
 
           cat ${release_md}
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Upload OpenWrt to Release
         id: release
@@ -1032,4 +1042,4 @@ jobs:
           # rm -rf $(ls . | grep -v "^output$" | xargs) 2>/dev/null
           rm -rf ./* 2>/dev/null
           df -hT ${PWD}
-          echo "status=success" >> ${GITHUB_OUTPUT}
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
