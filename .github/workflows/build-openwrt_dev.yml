@@ -288,6 +288,7 @@ jobs:
           echo -e "Current working directory: $(pwd)"
 
           sudo -E apt-get -yqq update
+          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
 
           # ----- Language and Runtime -----
           regexes=(
@@ -551,17 +552,17 @@ jobs:
         id: switch-gcc
         env:
           DEBIAN_FRONTEND: noninteractive
-          gcc_version: ${{ env.gcc_version || '14' }}
+          version_gcc: ${{ env.version_gcc || '14' }}
         run: |
           echo -e "Current working directory: $(pwd)"
 
           sudo -E apt-get -yqq update
 
           packages_install=(
-            "gcc-${gcc_version}"
-            "g++-${gcc_version}"
-            "gcc-${gcc_version}-multilib"
-            "g++-${gcc_version}-multilib"
+            "gcc-${version_gcc}"
+            "g++-${version_gcc}"
+            "gcc-${version_gcc}-multilib"
+            "g++-${version_gcc}-multilib"
           )
           sudo -E apt-get -yqq install "${packages_install[@]}"
 
@@ -584,13 +585,13 @@ jobs:
           sudo update-alternatives --query g++
           # 切换到所需版本
           for tool in "${tools_gcc[@]}"; do
-            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${gcc_version}
+            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${version_gcc}
           done
           # 验证版本
           gcc --version
           g++ --version
 
-          echo "Switched to GCC/G++ version ${gcc_version}."
+          echo "Switched to GCC/G++ version ${version_gcc}."
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Switch AArch64 Cross-Compiler
@@ -598,15 +599,15 @@ jobs:
         if: ${{ inputs.Target_System == 'MediaTek_Ralink_ARM' }}
         env:
           DEBIAN_FRONTEND: noninteractive
-          gcc_version: ${{ env.gcc_version || '14' }}
+          version_gcc: ${{ env.version_gcc || '14' }}
         run: |
           echo -e "Current working directory: $(pwd)"
 
           sudo -E apt-get -yqq update
 
           packages_install=(
-            "gcc-${gcc_version}-aarch64-linux-gnu"
-            "cpp-${gcc_version}-aarch64-linux-gnu"
+            "gcc-${version_gcc}-aarch64-linux-gnu"
+            "cpp-${version_gcc}-aarch64-linux-gnu"
           )
           sudo -E apt-get -yqq install "${packages_install[@]}"
 
@@ -632,13 +633,13 @@ jobs:
           sudo update-alternatives --query aarch64-linux-gnu-gcc
           # 切换到所需版本
           for tool in "${tools_aarch64[@]}"; do
-            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${gcc_version}
+            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${version_gcc}
           done
 
           # 验证版本
           aarch64-linux-gnu-gcc --version
 
-          echo "Switched to AArch64 GCC version ${gcc_version}."
+          echo "Switched to AArch64 GCC version ${version_gcc}."
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Setup Docker
