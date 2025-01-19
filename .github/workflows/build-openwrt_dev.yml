@@ -149,6 +149,16 @@ jobs:
 
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
+      - name: Load Custom Environment Variables
+        id: env-custom
+        if: ${{ env.custom_env != '' }}
+        env:
+          flag_split: ";"
+        working-directory: /
+        run: |
+          echo "${{ env.custom_env }}" | tr '${{ env.flag_split }}' '\n' | tee -a $GITHUB_ENV
+
+      # ========== Clean up environment ==========
       - name: Clean Snap
         id: clean-snap
         env:
@@ -156,6 +166,7 @@ jobs:
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
+          df -Th
 
           sudo -E apt-get -yqq update
           sudo snap list
@@ -179,6 +190,7 @@ jobs:
           EOF'
           sudo -E systemctl daemon-reload
 
+          df -Th
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Clean Docker
@@ -207,6 +219,7 @@ jobs:
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
+          df -Th
 
           # ===== Clean Apt =====
           # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
