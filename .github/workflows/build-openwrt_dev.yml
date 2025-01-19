@@ -183,16 +183,21 @@ jobs:
 
       - name: Clean Docker
         id: clean-docker
+        # if: ${{ 'true' == 'false' }} # disable
         env:
           DEBIAN_FRONTEND: noninteractive
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
+          df -Th
 
-          # ===== Clean Docker =====
           docker image list
           docker image prune -a -f
+          # for image in $(docker images -q); do
+          #   docker rmi -f $image
+          # done
 
+          df -Th
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Clean Runner
