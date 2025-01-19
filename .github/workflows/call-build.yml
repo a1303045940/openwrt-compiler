@@ -1,76 +1,68 @@
-name: Call Build
+name: Call Build (Dev)
+
+# https://docs.github.com/zh/actions/writing-workflows/workflow-syntax-for-github-actions
+run-name: Build Matrix for OpenWrt
 
 on:
-  # schedule:
-  #   - cron: "0 0 * * *"
+  schedule:
+    # 21:00 UTC
+    - cron: "0 21 * * *"
   repository_dispatch:
   workflow_dispatch:
 
-env:
-  TZ: UTC
-
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  heads:
+    name: Heads of ${{ matrix.repo_target }}
+    runs-on: ${{ matrix.runner_image || 'ubuntu-latest' }}
+    outputs:
+      latest_branch: ${{ steps.find_latest.outputs.latest_branch }}
     strategy:
-      matrix:
-        config:
-          [
-            {
-              OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git",
-              OpenWrt_Branch: "main",
-              Target_System: "x86",
-              Subtarget: "x86_64",
-              Target_Profile: "",
-            },
-            {
-              OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git",
-              OpenWrt_Branch: "main",
-              Target_System: "MediaTek_Ralink_ARM",
-              Subtarget: "MT798x",
-              Target_Profile: "",
-            },
-            {
-              OpenWrt_Repository: "git.openwrt.org/openwrt/openwrt.git",
-              OpenWrt_Branch: "main",
-              Target_System: "MediaTek_Ralink_ARM",
-              Subtarget: "MT798x",
-              Target_Profile: "nokia_ea0326gmp",
-            },
-          ]
       fail-fast: false
+      matrix:
+        runner_image: ["ubuntu-latest"]
+        repo_target: ["https://git.openwrt.org/openwrt/openwrt.git"]
     steps:
-      - name: Trigger workflow
-        id: trigger
-        env:
-          branch: "main"
-          workflow: "build-openwrt"
-        working-directory: /
+      - name: Get the latest openwrt version branch
+        id: find_latest
         run: |
-          # Create base JSON using jq
-          data=$(jq -n \
-            --arg OpenWrt_Repository "${{ matrix.config.OpenWrt_Repository }}" \
-            --arg OpenWrt_Branch "${{ matrix.config.OpenWrt_Branch }}" \
-            --arg Target_System "${{ matrix.config.Target_System }}" \
-            --arg Subtarget "${{ matrix.config.Subtarget }}" \
-            --arg Target_Profile "${{ matrix.config.Target_Profile }}" \
-            '{
-              ref: "${{ env.branch }}",
-              inputs: {
-                OpenWrt_Repository: $OpenWrt_Repository,
-                OpenWrt_Branch: $OpenWrt_Branch,
-                Target_System: $Target_System,
-                Subtarget: $Subtarget,
-                Target_Profile: $Target_Profile
-              }
-            }')
+          latest_version=$(git ls-remote --heads ${{ matrix.repo_target }} \
+            | grep 'refs/heads/openwrt-[0-9]\+\.[0-9]\+$' \
+            | sed 's/.*refs\/heads\/openwrt-//' \
+            | sort -V \
+            | tail -n1)
+          echo "latest_branch=openwrt-$latest_version" >> $GITHUB_OUTPUT
 
-          # Output the final JSON data for debugging (optional)
-          echo "$data" | jq .
+      - name: Check the latest branch
+        id: check
+        run: |
+          echo "The latest branch is: ${{ steps.find_latest.outputs.latest_branch }}"
 
-          # Use the generated data with curl
-          curl -X POST \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: Bearer ${{ secrets.PAT }}" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/${{ env.workflow }}.yml/dispatches \
-            --data "$data"
+  openwrt:
+    name: ${{ matrix.openwrt_branch }}
+    needs: heads
+    uses: ./.github/workflows/build-openwrt_dev.yml
+    strategy:
+      fail-fast: false
+      matrix:
+        runner_image: ["ubuntu-24.04"]
+        openwrt_repo: ["git.openwrt.org/openwrt/openwrt.git"]
+        openwrt_branch:
+          - "main"
+          - "${{ needs.heads.outputs.latest_branch }}"
+        workflows_inputs:
+          - Target_System: "x86"
+            Subtarget: "x86_64"
+            Target_Profile: ""
+          - Target_System: "MediaTek_Ralink_ARM"
+            Subtarget: "MT798x"
+            Target_Profile: ""
+          - Target_System: "MediaTek_Ralink_ARM"
+            Subtarget: "MT798x"
+            Target_Profile: "nokia_ea0326gmp"
+    with:
+      runner_image: ${{ matrix.runner_image }}
+      OpenWrt_Repository: ${{ matrix.openwrt_repo }}
+      OpenWrt_Branch: ${{ matrix.openwrt_branch }}
+      Target_System: ${{ matrix.workflows_inputs.Target_System }}
+      Subtarget: ${{ matrix.workflows_inputs.Subtarget }}
+      Target_Profile: ${{ matrix.workflows_inputs.Target_Profile }}

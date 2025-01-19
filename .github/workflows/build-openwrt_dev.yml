@@ -212,71 +212,6 @@ jobs:
           df -Th
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
-      - name: Clean Runner
-        id: clean-runner
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        working-directory: /
-        run: |
-          echo -e "Current working directory: $(pwd)"
-          df -Th
-
-          # ===== Clean Apt =====
-          # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
-          sudo -E apt-get -yqq update
-          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
-
-          # ----- package for purge -----
-          packages_purge=(
-            "docker*"
-            "ghc*"
-            "zulu*"
-            "google*"
-            "firefox*"
-            "dotnet*"
-            "powershell*"
-            "microsoft-edge*"
-            "sqlite*"
-            "postgresql*"
-            "mysql*"
-            "mongodb*"
-            "moby*"
-            "apache2*"
-            "nginx*"
-            "php*"
-          )
-          sudo -E apt-get -yqq autoremove --purge "${packages_purge[@]}"
-
-          # ===== Clean Browsers and Drivers =====
-          sudo -E rm -rf /usr/local/share/chromedriver-linux64
-          sudo -E rm -rf /usr/local/share/chromium
-          sudo -E rm -rf /usr/local/share/edge_driver
-          sudo -E rm -rf /usr/local/share/gecko_driver
-          sudo -E rm -rf /usr/share/java/selenium-server.jar
-
-          # ===== Clean PowerShell Tools =====
-          sudo -E rm -rf /usr/local/share/powershell
-
-          # ===== Clean Android Tools =====
-          sudo find /usr/local/lib/android/sdk/ndk/ -type d -regex '.*/2[0-6].*' -exec rm -rf {} +
-
-          # ===== Clean AGENT_TOOLSDIRECTORY =====
-          # 如果环境变量 AGENT_TOOLSDIRECTORY 不为空，则删除该目录及其所有内容
-          [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
-
-          # ===== Clean Swap =====
-          # 关闭所有交换空间 删除指定的交换文件
-          sudo swapoff -a
-          sudo rm -f /swapfile /mnt/swapfile
-
-          # ========== reload ==========
-          sudo -E apt-get -yqq autoremove --purge
-          sudo -E apt-get -qq clean
-          sudo -E systemctl daemon-reload
-
-          df -Th
-          echo "status=success" | tee -a ${GITHUB_OUTPUT}
-
       # - name: Clean GCC
       #   id: clean-gcc
       #   if: ${{ 'true' == 'false' }} # disable
@@ -403,6 +338,71 @@ jobs:
           df -Th
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
+      - name: Clean Runner
+        id: clean-runner
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
+          df -Th
+
+          # ===== Clean Apt =====
+          # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
+          sudo -E apt-get -yqq update
+          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
+
+          # ----- package for purge -----
+          packages_purge=(
+            "docker*"
+            "ghc*"
+            "zulu*"
+            "google*"
+            "firefox*"
+            "dotnet*"
+            "powershell*"
+            "microsoft-edge*"
+            "sqlite*"
+            "postgresql*"
+            "mysql*"
+            "mongodb*"
+            "moby*"
+            "apache2*"
+            "nginx*"
+            "php*"
+          )
+          sudo -E apt-get -yqq autoremove --purge "${packages_purge[@]}"
+
+          # ===== Clean Browsers and Drivers =====
+          sudo -E rm -rf /usr/local/share/chromedriver-linux64
+          sudo -E rm -rf /usr/local/share/chromium
+          sudo -E rm -rf /usr/local/share/edge_driver
+          sudo -E rm -rf /usr/local/share/gecko_driver
+          sudo -E rm -rf /usr/share/java/selenium-server.jar
+
+          # ===== Clean PowerShell Tools =====
+          sudo -E rm -rf /usr/local/share/powershell
+
+          # ===== Clean Android Tools =====
+          sudo find /usr/local/lib/android/sdk/ndk/ -type d -regex '.*/2[0-6].*' -exec rm -rf {} +
+
+          # ===== Clean AGENT_TOOLSDIRECTORY =====
+          # 如果环境变量 AGENT_TOOLSDIRECTORY 不为空，则删除该目录及其所有内容
+          [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
+
+          # ===== Clean Swap =====
+          # 关闭所有交换空间 删除指定的交换文件
+          sudo swapoff -a
+          sudo rm -f /swapfile /mnt/swapfile
+
+          # ========== reload ==========
+          sudo -E apt-get -yqq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo -E systemctl daemon-reload
+
+          df -Th
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
+
       - name: Switch GCC
         id: switch-gcc
         env:
@@ -506,58 +506,9 @@ jobs:
           df -Th
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
-      - name: Switch AArch64 Cross-Compiler
-        id: switch-aarch64-gcc
-        if: ${{ inputs.Target_System == 'MediaTek_Ralink_ARM' }}
-        env:
-          DEBIAN_FRONTEND: noninteractive
-          version_gcc: ${{ env.version_gcc || '14' }}
-        run: |
-          echo -e "Current working directory: $(pwd)"
-
-          sudo -E apt-get -yqq update
-          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
-
-
-          packages_install=(
-            "gcc-${{ env.version_gcc }}-aarch64-linux-gnu"
-            "cpp-${{ env.version_gcc }}-aarch64-linux-gnu"
-          )
-          sudo -E apt-get -yqq install "${packages_install[@]}"
-
-          # AArch64专用设置，涵盖所有带版本号的aarch64-linux-gnu工具
-          ls /usr/bin/aarch64-linux-gnu-*
-          tools_aarch64=(
-            "aarch64-linux-gnu-gcc"
-            "aarch64-linux-gnu-cpp"
-            "aarch64-linux-gnu-gcc-ar"
-            "aarch64-linux-gnu-gcc-nm"
-            "aarch64-linux-gnu-gcc-ranlib"
-            "aarch64-linux-gnu-gcov"
-            "aarch64-linux-gnu-gcov-dump"
-            "aarch64-linux-gnu-gcov-tool"
-            "aarch64-linux-gnu-lto-dump"
-          )
-          for tool in "${tools_aarch64[@]}"; do
-            versions=$(ls /usr/bin/${tool}-* 2>/dev/null | grep -Eo '[0-9]+$' | sort -u)
-            for version in ${versions}; do
-              sudo update-alternatives --install /usr/bin/${tool} ${tool} /usr/bin/${tool}-${version} ${version}
-            done
-          done
-          sudo update-alternatives --query aarch64-linux-gnu-gcc
-          # 切换到所需版本
-          for tool in "${tools_aarch64[@]}"; do
-            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${{ env.version_gcc }}
-          done
-
-          # 验证版本
-          aarch64-linux-gnu-gcc --version
-
-          echo "Switched to AArch64 GCC version ${version_gcc}."
-          echo "status=success" | tee -a ${GITHUB_OUTPUT}
-
       - name: Switch CLANG
         id: switch-clang
+        if: ${{ 'true' == 'false' }} # disable
         env:
           DEBIAN_FRONTEND: noninteractive
           version_clang: ${{ env.version_clang || '19' }}
@@ -655,6 +606,55 @@ jobs:
           echo "Switched to Clang version ${version_clang}"
 
           df -Th
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
+
+      - name: Switch AArch64 Cross-Compiler
+        id: switch-aarch64-gcc
+        if: ${{ inputs.Target_System == 'MediaTek_Ralink_ARM' }}
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          version_gcc: ${{ env.version_gcc || '14' }}
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          sudo -E apt-get -yqq update
+          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
+          
+          packages_install=(
+            "gcc-${{ env.version_gcc }}-aarch64-linux-gnu"
+            "cpp-${{ env.version_gcc }}-aarch64-linux-gnu"
+          )
+          sudo -E apt-get -yqq install "${packages_install[@]}"
+
+          # AArch64专用设置，涵盖所有带版本号的aarch64-linux-gnu工具
+          ls /usr/bin/aarch64-linux-gnu-*
+          tools_aarch64=(
+            "aarch64-linux-gnu-gcc"
+            "aarch64-linux-gnu-cpp"
+            "aarch64-linux-gnu-gcc-ar"
+            "aarch64-linux-gnu-gcc-nm"
+            "aarch64-linux-gnu-gcc-ranlib"
+            "aarch64-linux-gnu-gcov"
+            "aarch64-linux-gnu-gcov-dump"
+            "aarch64-linux-gnu-gcov-tool"
+            "aarch64-linux-gnu-lto-dump"
+          )
+          for tool in "${tools_aarch64[@]}"; do
+            versions=$(ls /usr/bin/${tool}-* 2>/dev/null | grep -Eo '[0-9]+$' | sort -u)
+            for version in ${versions}; do
+              sudo update-alternatives --install /usr/bin/${tool} ${tool} /usr/bin/${tool}-${version} ${version}
+            done
+          done
+          sudo update-alternatives --query aarch64-linux-gnu-gcc
+          # 切换到所需版本
+          for tool in "${tools_aarch64[@]}"; do
+            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${{ env.version_gcc }}
+          done
+
+          # 验证版本
+          aarch64-linux-gnu-gcc --version
+
+          echo "Switched to AArch64 GCC version ${version_gcc}."
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Setup Docker
