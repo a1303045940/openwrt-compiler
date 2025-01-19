@@ -269,7 +269,7 @@ jobs:
           sudo swapoff -a
           sudo rm -f /swapfile /mnt/swapfile
 
-          # ===== reload =====
+          # ========== reload ==========
           sudo -E apt-get -yqq autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
@@ -277,79 +277,79 @@ jobs:
           df -Th
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
-      - name: Clean GCC
-        id: clean-gcc
-        if: ${{ 'true' == 'false' }} # disable
-        env:
-          DEBIAN_FRONTEND: noninteractive
-          VERSION_GCC: 14
-        working-directory: /
-        run: |
-          echo -e "Current working directory: $(pwd)"
+      # - name: Clean GCC
+      #   id: clean-gcc
+      #   if: ${{ 'true' == 'false' }} # disable
+      #   env:
+      #     DEBIAN_FRONTEND: noninteractive
+      #     VERSION_GCC: 14
+      #   working-directory: /
+      #   run: |
+      #     echo -e "Current working directory: $(pwd)"
 
-          sudo -E apt-get -yqq update
-          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
+      #     sudo -E apt-get -yqq update
+      #     package_installed=$(dpkg-query -W -f='${binary:Package}\n')
 
-          # ----- Language and Runtime -----
-          regexes=(
-            "clang-[0-9]+.*"
-            "clang-format-[0-9]+.*"
-            "clang-tidy-[0-9]+.*"
-            "gcc-[0-9]+.*"
-            "libgcc-[0-9]+.*"
-            "g++-[0-9]+.*"
-            "cpp-[0-9]+.*"
-            "libstdc++-[0-9]+.*"
-            "gfortran-[0-9]+.*"
-            "libgfortran-[0-9]+.*"
-          )
-          packages_purge=()
-          for regex in "${regexes[@]}"; do
-            for package in $package_installed; do
-              if [[ $package =~ $regex ]]; then
-                  packages_purge+=("$package")
-              fi
-            done
-          done
+      #     # ----- Language and Runtime -----
+      #     regexes=(
+      #       "clang-[0-9]+.*"
+      #       "clang-format-[0-9]+.*"
+      #       "clang-tidy-[0-9]+.*"
+      #       "gcc-[0-9]+.*"
+      #       "libgcc-[0-9]+.*"
+      #       "g++-[0-9]+.*"
+      #       "cpp-[0-9]+.*"
+      #       "libstdc++-[0-9]+.*"
+      #       "gfortran-[0-9]+.*"
+      #       "libgfortran-[0-9]+.*"
+      #     )
+      #     packages_purge=()
+      #     for regex in "${regexes[@]}"; do
+      #       for package in $package_installed; do
+      #         if [[ $package =~ $regex ]]; then
+      #             packages_purge+=("$package")
+      #         fi
+      #       done
+      #     done
 
-          echo "Packages to be purged: ${packages_purge[@]}"
-          set +e
-          for package in "${packages_purge[@]}"; do
-            echo "Attempting to remove $package"
-            sudo -E apt-get -yqq autoremove --purge $package
-            if [[ $? -ne 0 ]]; then
-              echo "Failed to remove $package"
-            fi
-          done
-          set -e
+      #     echo "Packages to be purged: ${packages_purge[@]}"
+      #     set +e
+      #     for package in "${packages_purge[@]}"; do
+      #       echo "Attempting to remove $package"
+      #       sudo -E apt-get -yqq autoremove --purge $package
+      #       if [[ $? -ne 0 ]]; then
+      #         echo "Failed to remove $package"
+      #       fi
+      #     done
+      #     set -e
 
-          packages_install=(
-            # ----- Language and Runtime -----
-            "clang"
-            "clang-format"
-            "clang-tidy"
-            "gcc"
-            "libgcc-${{ env.VERSION_GCC }}-dev"
-            "g++"
-            "cpp"
-            "libstdc++-${{ env.VERSION_GCC }}-dev"
-            "gfortran"
-            "libgfortran-${{ env.VERSION_GCC }}-dev"
-          )
-          echo "Packages to be installed: ${packages_install[@]}"
-          sudo -E apt-get -yqq install "${packages_install[@]}"
+      #     packages_install=(
+      #       # ----- Language and Runtime -----
+      #       "clang"
+      #       "clang-format"
+      #       "clang-tidy"
+      #       "gcc"
+      #       "libgcc-${{ env.VERSION_GCC }}-dev"
+      #       "g++"
+      #       "cpp"
+      #       "libstdc++-${{ env.VERSION_GCC }}-dev"
+      #       "gfortran"
+      #       "libgfortran-${{ env.VERSION_GCC }}-dev"
+      #     )
+      #     echo "Packages to be installed: ${packages_install[@]}"
+      #     sudo -E apt-get -yqq install "${packages_install[@]}"
 
-          # ===== reload =====
-          sudo -E apt-get -yqq autoremove --purge
-          sudo -E apt-get -qq clean
-          sudo -E systemctl daemon-reload
+      #     # ========== reload ==========
+      #     sudo -E apt-get -yqq autoremove --purge
+      #     sudo -E apt-get -qq clean
+      #     sudo -E systemctl daemon-reload
 
-          # 验证版本
-          gcc --version
-          g++ --version
+      #     # 验证版本
+      #     gcc --version
+      #     g++ --version
 
-          df -Th
-          echo "status=success" | tee -a ${GITHUB_OUTPUT}
+      #     df -Th
+      #     echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Clean JDK
         id: clean-jdk
@@ -395,13 +395,304 @@ jobs:
           echo "Packages to be installed: ${packages_install[@]}"
           sudo -E apt-get -qq -y install "${packages_install[@]}"
 
-          # ===== reload =====
+          # ========== reload ==========
           sudo -E apt-get -qq -y autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
 
           df -Th
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
+
+      - name: Switch GCC
+        id: switch-gcc
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          version_gcc: ${{ env.version_gcc || '14' }}
+        run: |
+          echo -e "Current working directory: $(pwd)"
+          df -Th
+
+          sudo -E apt-get -yqq update
+          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
+
+          # ========== apt purge ==========
+          regexes=(
+            "gcc-[0-9]+.*"
+            "libgcc-[0-9]+.*"
+            "g++-[0-9]+.*"
+            "cpp-[0-9]+.*"
+            "libstdc++-[0-9]+.*"
+            "gfortran-[0-9]+.*"
+            "libgfortran-[0-9]+.*"
+          )
+          packages_purge=()
+          for regex in "${regexes[@]}"; do
+            for package in $package_installed; do
+              if [[ $package =~ $regex ]]; then
+                  packages_purge+=("$package")
+              fi
+            done
+          done
+          echo "Packages to be purged: ${packages_purge[@]}"
+
+          set +e
+          for package in "${packages_purge[@]}"; do
+            echo "Attempting to remove $package"
+            sudo -E apt-get -yqq autoremove --purge $package
+            if [[ $? -ne 0 ]]; then
+              echo "Failed to remove $package"
+            fi
+          done
+          set -e
+
+          # ========== reload ==========
+          sudo -E apt-get -yqq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo -E systemctl daemon-reload
+
+          # ========== apt install ==========
+          packages_install=(
+            # ----- gcc -----
+            "gcc-${{ env.version_gcc }}"
+            "libgcc-${{ env.version_gcc }}-dev"
+            "gcc-${{ env.version_gcc }}-multilib"
+            # ----- g++ -----
+            "g++-${{ env.version_gcc }}"
+            "libstdc++-${{ env.version_gcc }}-dev"
+            "g++-${{ env.version_gcc }}-multilib"
+            # -----cpp -----
+            "cpp-${{ env.version_gcc }}"
+            # ----- gfortran -----
+            "gfortran-${{ env.version_gcc }}"
+            "libgfortran-${{ env.version_gcc }}-dev"
+          )
+          echo "Packages to be installed: ${packages_install[@]}"
+          sudo -E apt-get -yqq install "${packages_install[@]}"
+
+          # ========== update-alternatives ==========
+          ls /usr/bin/gcc-* /usr/bin/g++-*
+          tools_gcc=(
+            "gcc"
+            "gcc-ar"
+            "gcc-nm"
+            "gcc-ranlib"
+            "g++"
+          )
+          # ===== update-alternatives --install <link> <name> <path> <priority> =====
+          for tool in "${tools_gcc[@]}"; do
+            versions=$(ls /usr/bin/${tool}-* | grep -Eo '[0-9]+$' | sort -u)
+            for version in ${versions}; do
+              sudo update-alternatives --install /usr/bin/${tool} ${tool} /usr/bin/${tool}-${version} ${version}
+            done
+          done
+          # ===== update-alternatives --query <name> =====
+          sudo update-alternatives --query gcc
+          sudo update-alternatives --query g++
+          # ===== update-alternatives --set <name> <path> =====
+          for tool in "${tools_gcc[@]}"; do
+            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${{ env.version_gcc }}
+          done
+
+          # ========== reload ==========
+          sudo -E apt-get -yqq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo -E systemctl daemon-reload
+
+          # ===== verify version =====
+          gcc --version
+          g++ --version
+          echo "Switched to GCC/G++ version ${version_gcc}"
+
+          df -Th
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
+
+      - name: Switch AArch64 Cross-Compiler
+        id: switch-aarch64-gcc
+        if: ${{ inputs.Target_System == 'MediaTek_Ralink_ARM' }}
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          version_gcc: ${{ env.version_gcc || '14' }}
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          sudo -E apt-get -yqq update
+          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
+
+
+          packages_install=(
+            "gcc-${{ env.version_gcc }}-aarch64-linux-gnu"
+            "cpp-${{ env.version_gcc }}-aarch64-linux-gnu"
+          )
+          sudo -E apt-get -yqq install "${packages_install[@]}"
+
+          # AArch64专用设置，涵盖所有带版本号的aarch64-linux-gnu工具
+          ls /usr/bin/aarch64-linux-gnu-*
+          tools_aarch64=(
+            "aarch64-linux-gnu-gcc"
+            "aarch64-linux-gnu-cpp"
+            "aarch64-linux-gnu-gcc-ar"
+            "aarch64-linux-gnu-gcc-nm"
+            "aarch64-linux-gnu-gcc-ranlib"
+            "aarch64-linux-gnu-gcov"
+            "aarch64-linux-gnu-gcov-dump"
+            "aarch64-linux-gnu-gcov-tool"
+            "aarch64-linux-gnu-lto-dump"
+          )
+          for tool in "${tools_aarch64[@]}"; do
+            versions=$(ls /usr/bin/${tool}-* 2>/dev/null | grep -Eo '[0-9]+$' | sort -u)
+            for version in ${versions}; do
+              sudo update-alternatives --install /usr/bin/${tool} ${tool} /usr/bin/${tool}-${version} ${version}
+            done
+          done
+          sudo update-alternatives --query aarch64-linux-gnu-gcc
+          # 切换到所需版本
+          for tool in "${tools_aarch64[@]}"; do
+            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${{ env.version_gcc }}
+          done
+
+          # 验证版本
+          aarch64-linux-gnu-gcc --version
+
+          echo "Switched to AArch64 GCC version ${version_gcc}."
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
+
+      - name: Switch CLANG
+        id: switch-clang
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          version_clang: ${{ env.version_clang || '19' }}
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          sudo -E apt-get -yqq update
+          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
+
+          # ========== apt purge ==========
+          regexes=(
+            "clang-[0-9]+.*"
+            "clang-format-[0-9]+.*"
+            "clang-tidy-[0-9]+.*"
+            "clangd-[0-9]+.*"
+            # "lld-[0-9]+.*"
+            # "lldb-[0-9]+.*"
+          )
+          packages_purge=()
+          for regex in "${regexes[@]}"; do
+            for package in $package_installed; do
+              if [[ $package =~ $regex ]]; then
+                  packages_purge+=("$package")
+              fi
+            done
+          done
+          echo "Packages to be purged: ${packages_purge[@]}"
+
+          set +e
+          for package in "${packages_purge[@]}"; do
+            echo "Attempting to remove $package"
+            sudo -E apt-get -yqq autoremove --purge $package
+            if [[ $? -ne 0 ]]; then
+              echo "Failed to remove $package"
+            fi
+          done
+          set -e
+
+          # ========== reload ==========
+          sudo -E apt-get -yqq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo -E systemctl daemon-reload
+
+          # ========== apt install ==========
+          packages_install=(
+            "clang-${{ env.version_clang }}"
+            "clang-format-${{ env.version_clang }}"
+            "clang-tidy-${{ env.version_clang }}"
+            "clangd-${{ env.version_clang }}"
+            # "lld-${{ env.version_clang }}"
+            # "lldb-${{ env.version_clang }}"
+          )
+          echo "Packages to be installed: ${packages_install[@]}"
+          sudo -E apt-get -yqq install "${packages_install[@]}"
+
+          # ========== update-alternatives ==========
+          ls /usr/bin/clang-* /usr/bin/clang-format-* /usr/bin/clang-tidy-*
+          tools_clang=(
+            "clang"
+            "clang-format"
+            "clang-tidy"
+            "clangd"
+            # "lld"
+            # "lldb"
+          )
+          # ===== update-alternatives --install <link> <name> <path> <priority> =====
+          for tool in "${tools_clang[@]}"; do
+            versions=$(ls /usr/bin/${tool}-* | grep -Eo '[0-9]+$' | sort -u)
+            for version in ${versions}; do
+              sudo update-alternatives --install /usr/bin/${tool} ${tool} /usr/bin/${tool}-${version} ${version}
+            done
+          done
+          # ===== update-alternatives --query <name> =====
+          sudo update-alternatives --query clang
+          sudo update-alternatives --query clang-format
+          sudo update-alternatives --query clang-tidy
+          # sudo update-alternatives --query lld
+          # sudo update-alternatives --query lldb
+          # ===== update-alternatives --set <name> <path> =====
+          for tool in "${tools_clang[@]}"; do
+            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${{ env.version_clang }}
+          done
+
+          # ========== reload ==========
+          sudo -E apt-get -yqq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo -E systemctl daemon-reload
+
+          # ===== verify version =====
+          clang --version
+          clang-format --version
+          clang-tidy --version
+          # lld --version
+          # lldb --version
+          echo "Switched to Clang version ${version_clang}"
+
+          df -Th
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
+
+      - name: Setup Docker
+        id: docker
+        if: ${{ 'true' == 'false' }} # disable
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        working-directory: /
+        run: |
+          # https://docs.docker.com/engine/install/ubuntu/
+
+          # ===== 1. Set up Docker's apt repository =====
+          # Add Docker's official GPG key:
+          # sudo apt-get update
+          # sudo apt-get install ca-certificates curl
+          sudo install -m 0755 -d /etc/apt/keyrings
+          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+          # Add the repository to Apt sources:
+          echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+            $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get update
+
+          # ===== 2. Install the Docker packages =====
+          sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+          docker --version
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
+
+      - name: Setup QEMU
+        id: qemu
+        if: ${{ 'true' == 'false' }} # disable
+        uses: docker/setup-qemu-action@master
+        # with:
+        #   platforms: ${{ env.arch_branch }}
 
       - name: Initialization environment
         id: init
@@ -424,8 +715,8 @@ jobs:
             "build-essential"
             "bzip2"
             "ca-certificates"
-            "clang"
-            "clangd"
+            # "clang"
+            # "clangd"
             "cmake"
             "cpio"
             "curl"
@@ -435,8 +726,8 @@ jobs:
             "fastjar"
             "flex"
             "gawk"
-            "g++"
-            "gcc"
+            # "g++"
+            # "gcc"
             # "gcc-aarch64-linux-gnu"
             "git"
             "git-lfs"
@@ -511,8 +802,8 @@ jobs:
             "ca-certificates"
             "curl"
             "flex"
-            "g++"
-            "gcc"
+            # "g++"
+            # "gcc"
             # "gcc-aarch64-linux-gnu"
             "git"
             "git-lfs"
@@ -545,139 +836,9 @@ jobs:
           make --version
           # Verify GCC version
           gcc --version
-
-          echo "status=success" | tee -a ${GITHUB_OUTPUT}
-
-      - name: Switch GNU C++ Compiler
-        id: switch-gcc
-        env:
-          DEBIAN_FRONTEND: noninteractive
-          version_gcc: ${{ env.version_gcc || '14' }}
-        run: |
-          echo -e "Current working directory: $(pwd)"
-
-          sudo -E apt-get -yqq update
-
-          packages_install=(
-            "gcc-${version_gcc}"
-            "g++-${version_gcc}"
-            "gcc-${version_gcc}-multilib"
-            "g++-${version_gcc}-multilib"
-          )
-          sudo -E apt-get -yqq install "${packages_install[@]}"
-
-          # 设置 update-alternatives 以管理不同版本的GCC和G++
-          ls /usr/bin/gcc-* /usr/bin/g++-*
-          tools_gcc=(
-            "gcc"
-            "gcc-ar"
-            "gcc-nm"
-            "gcc-ranlib"
-            "g++"
-          )
-          for tool in "${tools_gcc[@]}"; do
-            versions=$(ls /usr/bin/${tool}-* | grep -Eo '[0-9]+$' | sort -u)
-            for version in ${versions}; do
-              sudo update-alternatives --install /usr/bin/${tool} ${tool} /usr/bin/${tool}-${version} ${version}
-            done
-          done
-          sudo update-alternatives --query gcc
-          sudo update-alternatives --query g++
-          # 切换到所需版本
-          for tool in "${tools_gcc[@]}"; do
-            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${version_gcc}
-          done
-          # 验证版本
-          gcc --version
           g++ --version
 
-          echo "Switched to GCC/G++ version ${version_gcc}."
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
-
-      - name: Switch AArch64 Cross-Compiler
-        id: switch-aarch64-gcc
-        if: ${{ inputs.Target_System == 'MediaTek_Ralink_ARM' }}
-        env:
-          DEBIAN_FRONTEND: noninteractive
-          version_gcc: ${{ env.version_gcc || '14' }}
-        run: |
-          echo -e "Current working directory: $(pwd)"
-
-          sudo -E apt-get -yqq update
-
-          packages_install=(
-            "gcc-${version_gcc}-aarch64-linux-gnu"
-            "cpp-${version_gcc}-aarch64-linux-gnu"
-          )
-          sudo -E apt-get -yqq install "${packages_install[@]}"
-
-          # AArch64专用设置，涵盖所有带版本号的aarch64-linux-gnu工具
-          ls /usr/bin/aarch64-linux-gnu-*
-          tools_aarch64=(
-            "aarch64-linux-gnu-gcc"
-            "aarch64-linux-gnu-cpp"
-            "aarch64-linux-gnu-gcc-ar"
-            "aarch64-linux-gnu-gcc-nm"
-            "aarch64-linux-gnu-gcc-ranlib"
-            "aarch64-linux-gnu-gcov"
-            "aarch64-linux-gnu-gcov-dump"
-            "aarch64-linux-gnu-gcov-tool"
-            "aarch64-linux-gnu-lto-dump"
-          )
-          for tool in "${tools_aarch64[@]}"; do
-            versions=$(ls /usr/bin/${tool}-* 2>/dev/null | grep -Eo '[0-9]+$' | sort -u)
-            for version in ${versions}; do
-              sudo update-alternatives --install /usr/bin/${tool} ${tool} /usr/bin/${tool}-${version} ${version}
-            done
-          done
-          sudo update-alternatives --query aarch64-linux-gnu-gcc
-          # 切换到所需版本
-          for tool in "${tools_aarch64[@]}"; do
-            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${version_gcc}
-          done
-
-          # 验证版本
-          aarch64-linux-gnu-gcc --version
-
-          echo "Switched to AArch64 GCC version ${version_gcc}."
-          echo "status=success" | tee -a ${GITHUB_OUTPUT}
-
-      - name: Setup Docker
-        id: docker
-        if: ${{ 'true' == 'false' }} # disable
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        working-directory: /
-        run: |
-          # https://docs.docker.com/engine/install/ubuntu/
-
-          # ===== 1. Set up Docker's apt repository =====
-          # Add Docker's official GPG key:
-          # sudo apt-get update
-          # sudo apt-get install ca-certificates curl
-          sudo install -m 0755 -d /etc/apt/keyrings
-          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-          sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-          # Add the repository to Apt sources:
-          echo \
-            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-            $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-          sudo apt-get update
-
-          # ===== 2. Install the Docker packages =====
-          sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-          docker --version
-          echo "status=success" | tee -a ${GITHUB_OUTPUT}
-
-      - name: Setup QEMU
-        id: qemu
-        if: ${{ 'true' == 'false' }} # disable
-        uses: docker/setup-qemu-action@master
-        # with:
-        #   platforms: ${{ env.arch_branch }}
 
       - name: Create simulated physical disk
         id: disk
