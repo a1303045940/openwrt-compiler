@@ -1,4 +1,4 @@
-name: Build OpenWrt (Dev)
+name: Build OpenWrt
 
 on:
   repository_dispatch:
