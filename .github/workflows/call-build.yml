@@ -40,7 +40,7 @@ jobs:
   openwrt:
     name: ${{ matrix.openwrt_branch }}
     needs: heads
-    uses: ./.github/workflows/build-openwrt_dev.yml
+    uses: ./.github/workflows/build-openwrt.yml
     strategy:
       fail-fast: false
       matrix:
