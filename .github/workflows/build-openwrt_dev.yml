@@ -654,7 +654,7 @@ jobs:
           clang-tidy --version || true
           echo "Switched to Clang version ${clang_version}"
 
-      - name: (Switch) AArch64 Cross-Compiler
+      - name: (Switch) AArch64 Cross-Compiler - ${{ env.gcc_version }}
         id: switch-aarch64-gcc
         if: ${{ inputs.Target_System == 'MediaTek_Ralink_ARM' }}
         working-directory: /
@@ -869,7 +869,7 @@ jobs:
 
           df -Th
 
-      - name: Check environment
+      - name: (Check) environment
         id: check-env
         working-directory: /
         run: |
@@ -890,7 +890,7 @@ jobs:
           gcc --version
           g++ --version
 
-      - name: Clone OpenWrt
+      - name: (Clone) OpenWrt
         id: clonesys
         # if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
         # if: ${{ steps.disk.outcome }} == 'success' && !cancelled()
@@ -904,7 +904,7 @@ jobs:
 
           df -hT ${PWD}
 
-      - name: Clone DIY
+      - name: (Clone) DIY
         id: clonediy
         if: ${{ steps.disk.conclusion }} == 'success' && !cancelled()
         working-directory: /
@@ -916,7 +916,7 @@ jobs:
 
           df -hT ${PWD}
 
-      - name: Check environment
+      - name: (Check) path
         id: check-path
         working-directory: /
         run: |
