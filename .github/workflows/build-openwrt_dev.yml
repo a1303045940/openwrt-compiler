@@ -317,7 +317,7 @@ jobs:
           sudo -E systemctl daemon-reload
           df -Th
 
-      # ========== Clean up environment ==========
+      # ========== General Environment Setup: Start ==========
       - name: (Purge) Snap
         id: snap-purge
         working-directory: /
@@ -889,6 +889,8 @@ jobs:
           echo -e "---------- Verify GCC version ----------"
           gcc --version
           g++ --version
+
+      # ========== General Environment Setup: End ==========
 
       - name: (Clone) OpenWrt
         id: clonesys
