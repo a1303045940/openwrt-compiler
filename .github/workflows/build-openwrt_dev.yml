@@ -96,7 +96,7 @@ jobs:
       docker_install: false
       qemu_install: false
     steps:
-      - name: Set environment variable
+      - name: (Var) environment variable setup
         id: var-setup
         working-directory: /
         run: |
@@ -167,7 +167,7 @@ jobs:
             echo "${var}=${!var}" | tee -a $GITHUB_ENV
           done
 
-      - name: Load Custom Environment Variables
+      - name: (Var) Custom Environment Variables Load
         id: var-custom
         if: ${{ env.custom_env != '' }}
         env:
