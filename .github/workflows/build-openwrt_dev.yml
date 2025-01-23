@@ -475,19 +475,19 @@ jobs:
           df -Th
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
-      - name: Switch GCC
-        id: switch-gcc
+            # ...existing code...
+      
+      - name: Purge Existing GCC
+        id: purge-gcc
         env:
           DEBIAN_FRONTEND: noninteractive
-          version_gcc: ${{ env.version_gcc || '14' }}
+          # version_gcc: ${{ env.version_gcc || '14' }}
         run: |
           echo -e "Current working directory: $(pwd)"
           df -Th
-
           sudo -E apt-get -yqq update
-          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
 
-          # ========== apt purge ==========
+          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
           regexes=(
             "gcc-[0-9]+.*"
             "libgcc-[0-9]+.*"
@@ -501,7 +501,7 @@ jobs:
           for regex in "${regexes[@]}"; do
             for package in $package_installed; do
               if [[ $package =~ $regex ]]; then
-                  packages_purge+=("$package")
+                packages_purge+=("$package")
               fi
             done
           done
@@ -517,32 +517,47 @@ jobs:
           done
           set -e
 
-          # ========== reload ==========
+          # reload
           sudo -E apt-get -yqq autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
 
-          # ========== apt install ==========
+      - name: Install New GCC
+        id: install-gcc
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          version_gcc: ${{ env.version_gcc || '14' }}
+        run: |
+          echo "Installing packages for GCC version ${version_gcc}"
+
           packages_install=(
             # ----- gcc -----
-            "gcc-${{ env.version_gcc }}"
-            "libgcc-${{ env.version_gcc }}-dev"
-            "gcc-${{ env.version_gcc }}-multilib"
+            "gcc-${version_gcc}"
+            "libgcc-${version_gcc}-dev"
+            "gcc-${version_gcc}-multilib"
             # ----- g++ -----
-            "g++-${{ env.version_gcc }}"
-            "libstdc++-${{ env.version_gcc }}-dev"
-            "g++-${{ env.version_gcc }}-multilib"
-            # -----cpp -----
-            "cpp-${{ env.version_gcc }}"
+            "g++-${version_gcc}"
+            "libstdc++-${version_gcc}-dev"
+            "g++-${version_gcc}-multilib"
+            # ----- cpp -----
+            "cpp-${version_gcc}"
             # ----- gfortran -----
-            "gfortran-${{ env.version_gcc }}"
-            "libgfortran-${{ env.version_gcc }}-dev"
+            "gfortran-${version_gcc}"
+            "libgfortran-${version_gcc}-dev"
           )
           echo "Packages to be installed: ${packages_install[@]}"
           sudo -E apt-get -yqq install "${packages_install[@]}"
 
-          # ========== update-alternatives ==========
+      - name: Switch to Installed GCC
+        id: switch-gcc
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          version_gcc: ${{ env.version_gcc || '14' }}
+        run: |
+          echo "Setting alternatives for GCC version ${version_gcc}"
+
           ls /usr/bin/gcc-* /usr/bin/g++-*
+
           tools_gcc=(
             "gcc"
             "gcc-ar"
@@ -550,31 +565,33 @@ jobs:
             "gcc-ranlib"
             "g++"
           )
-          # ===== update-alternatives --install <link> <name> <path> <priority> =====
+
+          # 安装可用的版本到 alternatives
           for tool in "${tools_gcc[@]}"; do
             versions=$(ls /usr/bin/${tool}-* | grep -Eo '[0-9]+$' | sort -u)
-            for version in ${versions}; do
-              sudo update-alternatives --install /usr/bin/${tool} ${tool} /usr/bin/${tool}-${version} ${version}
+            for ver in ${versions}; do
+              sudo update-alternatives --install /usr/bin/${tool} ${tool} /usr/bin/${tool}-${ver} ${ver}
             done
           done
-          # ===== update-alternatives --query <name> =====
+
+          # 查看配置
           sudo update-alternatives --query gcc
           sudo update-alternatives --query g++
-          # ===== update-alternatives --set <name> <path> =====
+
+          # 切换到指定版本
           for tool in "${tools_gcc[@]}"; do
-            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${{ env.version_gcc }}
+            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${version_gcc}
           done
 
-          # ========== reload ==========
+          # reload
           sudo -E apt-get -yqq autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
 
-          # ===== verify version =====
+          # 验证
           gcc --version
           g++ --version
           echo "Switched to GCC/G++ version ${version_gcc}"
-
           df -Th
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
