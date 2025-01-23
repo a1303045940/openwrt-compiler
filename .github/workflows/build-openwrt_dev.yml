@@ -318,7 +318,7 @@ jobs:
           df -Th
 
       # ========== Clean up environment ==========
-      - name: Purge Snap
+      - name: (Purge) Snap
         id: snap-purge
         working-directory: /
         run: |
@@ -352,7 +352,7 @@ jobs:
           sudo -E systemctl daemon-reload
           df -Th
 
-      - name: Clean Docker Images
+      - name: (Clean) Docker Images
         id: docker-clean
         working-directory: /
         run: |
@@ -367,7 +367,7 @@ jobs:
 
           df -Th
 
-      - name: Clean Runner
+      - name: (Clean) Runner
         id: runner-clean
         working-directory: /
         run: |
@@ -425,7 +425,7 @@ jobs:
           sudo -E systemctl daemon-reload
           df -Th
       
-      - name: Purge Existing GCC
+      - name: (Purge) Existing GCC
         id: gcc-purge
         if: ${{ env.gcc_purge == 'true' }}
         working-directory: /
@@ -470,7 +470,7 @@ jobs:
           sudo -E systemctl daemon-reload
           df -Th
 
-      - name: Install GCC - ${{ env.gcc_version }}
+      - name: (Install) GCC - ${{ env.gcc_version }}
         id: gcc-install
         if: ${{ env.gcc_install == 'true' }}
         working-directory: /
@@ -501,7 +501,7 @@ jobs:
           sudo -E systemctl daemon-reload
           df -Th
 
-      - name: Switch Installed GCC - ${{ env.gcc_version }}
+      - name: (Switch) Installed GCC - ${{ env.gcc_version }}
         id: gcc-switch
         if: ${{ env.gcc_switch == 'true' }}
         working-directory: /
@@ -546,7 +546,7 @@ jobs:
           g++ --version
           echo "Switched to GCC/G++ version ${gcc_version}"
       
-      - name: Purge Existing Clang
+      - name: (Purge) Existing Clang
         id: clang-purge
         if: ${{ env.clang_purge == 'true' }}
         working-directory: /
@@ -590,7 +590,7 @@ jobs:
           sudo -E systemctl daemon-reload
           df -Th
 
-      - name: Install Clang - ${{ env.clang_version }}
+      - name: (Install) Clang - ${{ env.clang_version }}
         id: clang-install
         if: ${{ env.clang_install == 'true' }}
         working-directory: /
@@ -612,7 +612,7 @@ jobs:
           sudo -E systemctl daemon-reload
           df -Th
 
-      - name: Switch Clang
+      - name: (Switch) Clang
         id: clang-switch
         if: ${{ env.clang_switch == 'true' }}
         working-directory: /
@@ -654,7 +654,7 @@ jobs:
           clang-tidy --version || true
           echo "Switched to Clang version ${clang_version}"
 
-      - name: Switch AArch64 Cross-Compiler
+      - name: (Switch) AArch64 Cross-Compiler
         id: switch-aarch64-gcc
         if: ${{ inputs.Target_System == 'MediaTek_Ralink_ARM' }}
         working-directory: /
@@ -705,7 +705,7 @@ jobs:
           aarch64-linux-gnu-gcc --version
           echo "Switched to AArch64 GCC version ${gcc_version}."
 
-      - name: Purge JDK
+      - name: (Purge) JDK
         id: jdk-purge
         if: ${{ env.jdk_purge == 'true' }}
         working-directory: /
@@ -749,7 +749,7 @@ jobs:
           sudo -E systemctl daemon-reload
           df -Th
 
-      - name: Install JDK
+      - name: (Install) JDK
         id: jdk-install
         if: ${{ env.jdk_install == 'true' }}
         working-directory: /
@@ -771,7 +771,7 @@ jobs:
           sudo -E systemctl daemon-reload
           df -Th
 
-      - name: Setup Docker
+      - name: (Setup) Docker
         id: docker-setup
         if: ${{ env.docker_setup == 'true' }}
         working-directory: /
@@ -804,7 +804,7 @@ jobs:
 
           docker --version
 
-      - name: Setup QEMU
+      - name: (Setup) QEMU
         id: qemu-setup
         if: ${{ env.qemu_setup == 'true' }}
         uses: docker/setup-qemu-action@master
@@ -861,6 +861,27 @@ jobs:
 
           df -Th
 
+      - name: Check environment
+        id: check-env
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
+          df -Th
+
+          echo -e "---------- List all environment variables ----------"
+          printenv
+
+          echo -e "---------- List all installed packages ----------"
+          apt list --installed
+          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n
+
+          echo -e "---------- Verify Make version ----------"
+          make --version
+
+          echo -e "---------- Verify GCC version ----------"
+          gcc --version
+          g++ --version
+
       - name: Clone OpenWrt
         id: clonesys
         # if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
@@ -888,19 +909,11 @@ jobs:
           df -hT ${PWD}
 
       - name: Check environment
-        id: checkenv
+        id: check-path
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
-
-          # List all environment variables
-          printenv
-
-          # Verify Make version
-          make --version
-          # Verify GCC version
-          gcc --version
-          g++ --version
+          df -Th
 
           echo -e "# ========== Path =========="
           declare -a paths=("${{ env.path_build }}" "${{ env.path_openwrt }}" "${{ env.path_diy }}" "${{ env.path_output }}" "${{ env.path_target }}" "${{ env.diy_patches }}")
@@ -938,17 +951,17 @@ jobs:
           fi
 
       - name: Update feeds
-        id: update
+        id: feeds-update
         working-directory: ${{ env.path_openwrt }}
         run: |
           echo -e "Current working directory: $(pwd)"
           cat ./feeds.conf.default
           ./scripts/feeds update -a
 
-      - name: Install feeds
-        id: install
+      - name: (Install) feeds
+        id: feeds-install
         working-directory: ${{ env.path_openwrt }}
-        if: ${{ steps.update.conclusion }} == 'success' && !cancelled()
+        if: ${{ steps.feeds-update.conclusion }} == 'success' && !cancelled()
         run: |
           echo -e "Current working directory: $(pwd)"
           ./scripts/feeds install -a
@@ -965,7 +978,7 @@ jobs:
           fi
 
       - name: (.config) Load custom configuration
-        id: config
+        id: config-custom
         working-directory: ${{ env.path_openwrt }}
         run: |
           echo -e "Current working directory: $(pwd)"
@@ -1007,6 +1020,7 @@ jobs:
           fi
 
       - name: (.config) Update config
+        id: config-update
         working-directory: ${{ env.path_openwrt }}
         run: |
           echo -e "Current working directory: $(pwd)"
@@ -1017,7 +1031,7 @@ jobs:
       - name: Download package
         id: package
         working-directory: ${{ env.path_openwrt }}
-        if: ${{ steps.install.conclusion }} == 'success' && !cancelled()
+        if: ${{ steps.feeds-install.conclusion }} == 'success' && !cancelled()
         run: |
           echo -e "Current working directory: $(pwd)"
           echo -e "make download: $(($(nproc) + 1)) thread"
@@ -1087,7 +1101,7 @@ jobs:
             echo "No kernel file found."
           fi
 
-      - name: Clean output
+      - name: (Clean) output
         id: clean-output
         working-directory: ${{ env.path_output }}
         run: |
@@ -1104,8 +1118,6 @@ jobs:
           #     sha256sum "${file}" > "${file}.sha"
           #   fi
           # done
-
-          
 
       - name: "[release.md] Record release.md"
         id: record
