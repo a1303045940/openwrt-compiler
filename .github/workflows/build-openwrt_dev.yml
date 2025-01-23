@@ -771,7 +771,7 @@ jobs:
       #     sudo -E systemctl daemon-reload
       #     df -Th
 
-      - name: (Install) JDK
+      - name: (Install) JDK - ${{ env.jdk_version }}
         id: jdk-install
         if: ${{ env.jdk_install == 'true' }}
         uses: actions/setup-java@main
