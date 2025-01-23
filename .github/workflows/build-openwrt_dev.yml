@@ -612,7 +612,7 @@ jobs:
           sudo -E systemctl daemon-reload
           df -Th
 
-      - name: (Switch) Clang
+      - name: (Switch) Installed Clang - ${{ env.clang_version }}
         id: clang-switch
         if: ${{ env.clang_switch == 'true' }}
         working-directory: /
@@ -749,27 +749,35 @@ jobs:
           sudo -E systemctl daemon-reload
           df -Th
 
+      # - name: (Install) JDK
+      #   id: jdk-install
+      #   if: ${{ env.jdk_install == 'true' }}
+      #   working-directory: /
+      #   run: |
+      #     echo -e "Current working directory: $(pwd)"
+      #     df -Th
+      #     sudo -E apt-get -yqq update
+      #     package_installed=$(dpkg-query -W -f='${binary:Package}\n')
+
+      #     packages_install=(
+      #       "openjdk-${{ env.jdk_version }}-jdk"
+      #     )
+      #     echo "Packages to be installed: ${packages_install[@]}"
+      #     sudo -E apt-get -qq -y install "${packages_install[@]}"
+
+      #     # ========== reload ==========
+      #     sudo -E apt-get -yqq autoremove --purge
+      #     sudo -E apt-get -qq clean
+      #     sudo -E systemctl daemon-reload
+      #     df -Th
+
       - name: (Install) JDK
         id: jdk-install
         if: ${{ env.jdk_install == 'true' }}
-        working-directory: /
-        run: |
-          echo -e "Current working directory: $(pwd)"
-          df -Th
-          sudo -E apt-get -yqq update
-          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
-
-          packages_install=(
-            "openjdk-${{ env.jdk_version }}-jdk"
-          )
-          echo "Packages to be installed: ${packages_install[@]}"
-          sudo -E apt-get -qq -y install "${packages_install[@]}"
-
-          # ========== reload ==========
-          sudo -E apt-get -yqq autoremove --purge
-          sudo -E apt-get -qq clean
-          sudo -E systemctl daemon-reload
-          df -Th
+        uses: actions/setup-java@main
+        with:
+          distribution: "temurin"
+          java-version: ${{ env.jdk_version }}
 
       - name: (Setup) Docker
         id: docker-setup
