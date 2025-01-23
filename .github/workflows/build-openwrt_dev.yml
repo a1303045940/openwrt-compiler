@@ -837,7 +837,9 @@ jobs:
 
       - name: Clone OpenWrt
         id: clonesys
-        if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
+        # if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
+        # if: ${{ steps.disk.outcome }} == 'success' && !cancelled()
+        if: ${{ steps.disk.conclusion }} == 'success' && !cancelled()
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
@@ -850,7 +852,7 @@ jobs:
 
       - name: Clone DIY
         id: clonediy
-        if: ${{ steps.disk.outputs.status }} == 'success' && !cancelled()
+        if: ${{ steps.disk.conclusion }} == 'success' && !cancelled()
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
@@ -919,7 +921,8 @@ jobs:
       - name: Install feeds
         id: install
         working-directory: ${{ env.path_openwrt }}
-        if: ${{ steps.update.outputs.status }} == 'success' && !cancelled()
+        # if: ${{ steps.update.outputs.status }} == 'success' && !cancelled()
+        if: ${{ steps.update.conclusion }} == 'success' && !cancelled()
         run: |
           echo -e "Current working directory: $(pwd)"
           ./scripts/feeds install -a
@@ -995,7 +998,8 @@ jobs:
       - name: Download package
         id: package
         working-directory: ${{ env.path_openwrt }}
-        if: ${{ steps.install.outputs.status }} == 'success' && !cancelled()
+        # if: ${{ steps.install.outputs.status }} == 'success' && !cancelled()
+        if: ${{ steps.install.conclusion }} == 'success' && !cancelled()
         run: |
           echo -e "Current working directory: $(pwd)"
           echo -e "make download: $(($(nproc) + 1)) thread"
@@ -1007,7 +1011,8 @@ jobs:
       - name: Compile the OpenWrt
         id: compile
         working-directory: ${{ env.path_openwrt }}
-        if: ${{ steps.package.outputs.status }} == 'success' && !cancelled()
+        # if: ${{ steps.package.outputs.status }} == 'success' && !cancelled()
+        if: ${{ steps.package.conclusion }} == 'success' && !cancelled()
         run: |
           echo -e "Current working directory: $(pwd)"
           echo -e "$(($(nproc) + 1)) thread compile"
@@ -1146,7 +1151,8 @@ jobs:
       - name: Upload OpenWrt to Release
         id: release
         uses: ncipollo/release-action@main
-        if: ${{ steps.output.outputs.status }} == 'success' && !cancelled()
+        # if: ${{ steps.output.outputs.status }} == 'success' && !cancelled()
+        if: ${{ steps.output.conclusion }} == 'success' && !cancelled()
         env:
           timestamp: ${{ steps.output.outputs.timestamp }}
           version_kernel: ${{ steps.version-kernel.outputs.version }}
