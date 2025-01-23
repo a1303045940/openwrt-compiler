@@ -75,6 +75,23 @@ jobs:
   build:
     name: Openwrt - ${{ inputs.OpenWrt_Branch }} - ${{ inputs.Target_System }} - ${{ inputs.Subtarget }} - ${{ inputs.Target_Profile || inputs.Subtarget }}
     runs-on: ${{ inputs.runner_image || 'ubuntu-latest' }}
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      # ----- gcc -----
+      gcc_purge: true
+      gcc_install: true
+      gcc_switch: true
+      gcc_version: 14
+      # ----- clang -----
+      clang_purge: true
+      clang_install: true
+      clang_switch: true
+      clang_version: 19
+      # ----- jdk -----
+      jdk_version: 21
+      # ----- docker -----
+      docker_setup: false
+      qemu_setup: false
     steps:
       - name: Set environment variable
         id: var
@@ -158,8 +175,6 @@ jobs:
 
       - name: Initialization environment
         id: init
-        env:
-          DEBIAN_FRONTEND: noninteractive
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
@@ -297,8 +312,6 @@ jobs:
       # ========== Clean up environment ==========
       - name: Clean Snap
         id: clean-snap
-        env:
-          DEBIAN_FRONTEND: noninteractive
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
@@ -328,11 +341,8 @@ jobs:
 
           df -Th
 
-      - name: Clean Docker
-        id: clean-docker
-        # if: ${{ 'true' == 'false' }} # disable
-        env:
-          DEBIAN_FRONTEND: noninteractive
+      - name: Clean Docker Images
+        id: docker
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
@@ -347,9 +357,7 @@ jobs:
           df -Th
 
       - name: Clean Runner
-        id: clean-runner
-        env:
-          DEBIAN_FRONTEND: noninteractive
+        id: runner-clean
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
@@ -411,10 +419,9 @@ jobs:
           df -Th
       
       - name: Purge Existing GCC
-        id: purge-gcc
-        env:
-          DEBIAN_FRONTEND: noninteractive
-          # version_gcc: ${{ env.version_gcc || '14' }}
+        id: gcc-purge
+        if: ${{ env.gcc_purge == 'true' }}
+        working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
           df -Th
@@ -455,39 +462,37 @@ jobs:
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
 
-      - name: Install New GCC
-        id: install-gcc
-        env:
-          DEBIAN_FRONTEND: noninteractive
-          version_gcc: ${{ env.version_gcc || '14' }}
+      - name: Install GCC - ${{ env.gcc_version }}
+        id: gcc-install
+        if: ${{ env.gcc_install == 'true' }}
+        working-directory: /
         run: |
-          echo "Installing packages for GCC version ${version_gcc}"
+          echo "Installing packages for GCC version ${gcc_version}"
 
           packages_install=(
             # ----- gcc -----
-            "gcc-${version_gcc}"
-            "libgcc-${version_gcc}-dev"
-            "gcc-${version_gcc}-multilib"
+            "gcc-${gcc_version}"
+            "libgcc-${gcc_version}-dev"
+            "gcc-${gcc_version}-multilib"
             # ----- g++ -----
-            "g++-${version_gcc}"
-            "libstdc++-${version_gcc}-dev"
-            "g++-${version_gcc}-multilib"
+            "g++-${gcc_version}"
+            "libstdc++-${gcc_version}-dev"
+            "g++-${gcc_version}-multilib"
             # ----- cpp -----
-            "cpp-${version_gcc}"
+            "cpp-${gcc_version}"
             # ----- gfortran -----
-            "gfortran-${version_gcc}"
-            "libgfortran-${version_gcc}-dev"
+            "gfortran-${gcc_version}"
+            "libgfortran-${gcc_version}-dev"
           )
           echo "Packages to be installed: ${packages_install[@]}"
           sudo -E apt-get -yqq install "${packages_install[@]}"
 
-      - name: Switch to Installed GCC
-        id: switch-gcc
-        env:
-          DEBIAN_FRONTEND: noninteractive
-          version_gcc: ${{ env.version_gcc || '14' }}
+      - name: Switch Installed GCC - ${{ env.gcc_version }}
+        id: gcc-switch
+        if: ${{ env.gcc_switch == 'true' }}
+        working-directory: /
         run: |
-          echo "Setting alternatives for GCC version ${version_gcc}"
+          echo "Setting alternatives for GCC version ${gcc_version}"
 
           ls /usr/bin/gcc-* /usr/bin/g++-*
 
@@ -513,7 +518,7 @@ jobs:
 
           # 切换到指定版本
           for tool in "${tools_gcc[@]}"; do
-            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${version_gcc}
+            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${gcc_version}
           done
 
           # reload
@@ -524,15 +529,13 @@ jobs:
           # 验证
           gcc --version
           g++ --version
-          echo "Switched to GCC/G++ version ${version_gcc}"
+          echo "Switched to GCC/G++ version ${gcc_version}"
           df -Th
       
       - name: Purge Existing Clang
-        id: purge-clang
-        if: ${{ 'true' == 'false' }} # disable
-        env:
-          DEBIAN_FRONTEND: noninteractive
-          # version_clang: ${{ env.version_clang || '19' }}
+        id: clang-purge
+        if: ${{ env.clang_purge == 'true' }}
+        working-directory: /
         run: |
           echo "Current working directory: $(pwd)"
           sudo -E apt-get -yqq update
@@ -570,30 +573,26 @@ jobs:
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
 
-      - name: Install Clang
-        id: install-clang
-        if: ${{ 'true' == 'false' }} # disable
-        env:
-          DEBIAN_FRONTEND: noninteractive
-          version_clang: ${{ env.version_clang || '19' }}
+      - name: Install Clang - ${{ env.clang_version }}
+        id: clang-install
+        if: ${{ env.clang_install == 'true' }}
+        working-directory: /
         run: |
           packages_install=(
-            "clang-${version_clang}"
-            "clang-format-${version_clang}"
-            "clang-tidy-${version_clang}"
-            "clangd-${version_clang}"
-            # "lld-${version_clang}"
-            # "lldb-${version_clang}"
+            "clang-${clang_version}"
+            "clang-format-${clang_version}"
+            "clang-tidy-${clang_version}"
+            "clangd-${clang_version}"
+            # "lld-${clang_version}"
+            # "lldb-${clang_version}"
           )
           echo "Packages to be installed: ${packages_install[@]}"
           sudo -E apt-get -yqq install "${packages_install[@]}"
 
       - name: Switch Clang
-        id: switch-clang
-        if: ${{ 'true' == 'false' }} # disable
-        env:
-          DEBIAN_FRONTEND: noninteractive
-          version_clang: ${{ env.version_clang || '19' }}
+        id: clang-switch
+        if: ${{ env.clang_switch == 'true' }}
+        working-directory: /
         run: |
           ls /usr/bin/clang-* /usr/bin/clang-format-* /usr/bin/clang-tidy-* || true
 
@@ -617,7 +616,7 @@ jobs:
           sudo update-alternatives --query clang-tidy   || true
 
           for tool in "${tools_clang[@]}"; do
-            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${version_clang} || true
+            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${clang_version} || true
           done
 
           sudo -E apt-get -yqq autoremove --purge
@@ -628,15 +627,13 @@ jobs:
           clang --version || true
           clang-format --version || true
           clang-tidy --version || true
-          echo "Switched to Clang version ${version_clang}"
+          echo "Switched to Clang version ${clang_version}"
           df -Th
 
       - name: Switch AArch64 Cross-Compiler
         id: switch-aarch64-gcc
         if: ${{ inputs.Target_System == 'MediaTek_Ralink_ARM' }}
-        env:
-          DEBIAN_FRONTEND: noninteractive
-          version_gcc: ${{ env.version_gcc || '14' }}
+        working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
 
@@ -644,8 +641,8 @@ jobs:
           package_installed=$(dpkg-query -W -f='${binary:Package}\n')
 
           packages_install=(
-            "gcc-${{ env.version_gcc }}-aarch64-linux-gnu"
-            "cpp-${{ env.version_gcc }}-aarch64-linux-gnu"
+            "gcc-${{ env.gcc_version }}-aarch64-linux-gnu"
+            "cpp-${{ env.gcc_version }}-aarch64-linux-gnu"
           )
           sudo -E apt-get -yqq install "${packages_install[@]}"
 
@@ -671,19 +668,16 @@ jobs:
           sudo update-alternatives --query aarch64-linux-gnu-gcc
           # 切换到所需版本
           for tool in "${tools_aarch64[@]}"; do
-            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${{ env.version_gcc }}
+            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${{ env.gcc_version }}
           done
 
           # 验证版本
           aarch64-linux-gnu-gcc --version
 
-          echo "Switched to AArch64 GCC version ${version_gcc}."
+          echo "Switched to AArch64 GCC version ${gcc_version}."
 
       - name: Clean JDK
         id: clean-jdk
-        env:
-          DEBIAN_FRONTEND: noninteractive
-          VERSION_JDK: 21
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
@@ -718,7 +712,7 @@ jobs:
           set -e
 
           packages_install=(
-            "openjdk-${{ env.VERSION_JDK }}-jdk"
+            "openjdk-${{ env.jdk_version }}-jdk"
           )
           echo "Packages to be installed: ${packages_install[@]}"
           sudo -E apt-get -qq -y install "${packages_install[@]}"
@@ -731,10 +725,8 @@ jobs:
           df -Th
 
       - name: Setup Docker
-        id: docker
-        if: ${{ 'true' == 'false' }} # disable
-        env:
-          DEBIAN_FRONTEND: noninteractive
+        id: docker-setup
+        if: ${{ env.docker_setup == 'true' }}
         working-directory: /
         run: |
           # https://docs.docker.com/engine/install/ubuntu/
@@ -760,8 +752,8 @@ jobs:
           docker --version
 
       - name: Setup QEMU
-        id: qemu
-        if: ${{ 'true' == 'false' }} # disable
+        id: qemu-setup
+        if: ${{ env.qemu_setup == 'true' }}
         uses: docker/setup-qemu-action@master
         # with:
         #   platforms: ${{ env.arch_branch }}
