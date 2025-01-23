@@ -422,60 +422,6 @@ jobs:
 
           df -Th
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
-
-      - name: Clean JDK
-        id: clean-jdk
-        env:
-          DEBIAN_FRONTEND: noninteractive
-          VERSION_JDK: 21
-        working-directory: /
-        run: |
-          echo -e "Current working directory: $(pwd)"
-
-          sudo -E apt-get -yqq update
-          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
-
-          # ----- package for re-install -----
-          regexes=(
-            "temurin-[0-9]+-jdk"
-            "openjdk-[0-9]+.*"
-            "zulu*"
-          )
-          packages_purge=()
-          for regex in "${regexes[@]}"; do
-            for package in $package_installed; do
-              if [[ $package =~ $regex ]]; then
-                  packages_purge+=("$package")
-              fi
-            done
-          done
-
-          echo "Packages to be purged: ${packages_purge[@]}"
-          set +e
-          for package in "${packages_purge[@]}"; do
-            echo "Attempting to remove $package"
-            sudo -E apt-get -yqq autoremove --purge $package
-            if [[ $? -ne 0 ]]; then
-              echo "Failed to remove $package"
-            fi
-          done
-          set -e
-
-          packages_install=(
-            "openjdk-${{ env.VERSION_JDK }}-jdk"
-          )
-          echo "Packages to be installed: ${packages_install[@]}"
-          sudo -E apt-get -qq -y install "${packages_install[@]}"
-
-          # ========== reload ==========
-          sudo -E apt-get -qq -y autoremove --purge
-          sudo -E apt-get -qq clean
-          sudo -E systemctl daemon-reload
-
-          df -Th
-          echo "status=success" | tee -a ${GITHUB_OUTPUT}
-
-            # ...existing code...
       
       - name: Purge Existing GCC
         id: purge-gcc
@@ -594,20 +540,18 @@ jobs:
           echo "Switched to GCC/G++ version ${version_gcc}"
           df -Th
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
-
-      - name: Switch CLANG
-        id: switch-clang
+      
+      - name: Purge Existing Clang
+        id: purge-clang
         if: ${{ 'true' == 'false' }} # disable
         env:
           DEBIAN_FRONTEND: noninteractive
-          version_clang: ${{ env.version_clang || '19' }}
+          # version_clang: ${{ env.version_clang || '19' }}
         run: |
-          echo -e "Current working directory: $(pwd)"
-
+          echo "Current working directory: $(pwd)"
           sudo -E apt-get -yqq update
           package_installed=$(dpkg-query -W -f='${binary:Package}\n')
 
-          # ========== apt purge ==========
           regexes=(
             "clang-[0-9]+.*"
             "clang-format-[0-9]+.*"
@@ -620,7 +564,7 @@ jobs:
           for regex in "${regexes[@]}"; do
             for package in $package_installed; do
               if [[ $package =~ $regex ]]; then
-                  packages_purge+=("$package")
+                packages_purge+=("$package")
               fi
             done
           done
@@ -629,32 +573,44 @@ jobs:
           set +e
           for package in "${packages_purge[@]}"; do
             echo "Attempting to remove $package"
-            sudo -E apt-get -yqq autoremove --purge $package
+            sudo -E apt-get -yqq autoremove --purge "$package"
             if [[ $? -ne 0 ]]; then
               echo "Failed to remove $package"
             fi
           done
           set -e
 
-          # ========== reload ==========
           sudo -E apt-get -yqq autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
 
-          # ========== apt install ==========
+      - name: Install Clang
+        id: install-clang
+        if: ${{ 'true' == 'false' }} # disable
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          version_clang: ${{ env.version_clang || '19' }}
+        run: |
           packages_install=(
-            "clang-${{ env.version_clang }}"
-            "clang-format-${{ env.version_clang }}"
-            "clang-tidy-${{ env.version_clang }}"
-            "clangd-${{ env.version_clang }}"
-            # "lld-${{ env.version_clang }}"
-            # "lldb-${{ env.version_clang }}"
+            "clang-${version_clang}"
+            "clang-format-${version_clang}"
+            "clang-tidy-${version_clang}"
+            "clangd-${version_clang}"
+            # "lld-${version_clang}"
+            # "lldb-${version_clang}"
           )
           echo "Packages to be installed: ${packages_install[@]}"
           sudo -E apt-get -yqq install "${packages_install[@]}"
 
-          # ========== update-alternatives ==========
-          ls /usr/bin/clang-* /usr/bin/clang-format-* /usr/bin/clang-tidy-*
+      - name: Switch Clang
+        id: switch-clang
+        if: ${{ 'true' == 'false' }} # disable
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          version_clang: ${{ env.version_clang || '19' }}
+        run: |
+          ls /usr/bin/clang-* /usr/bin/clang-format-* /usr/bin/clang-tidy-* || true
+
           tools_clang=(
             "clang"
             "clang-format"
@@ -663,37 +619,30 @@ jobs:
             # "lld"
             # "lldb"
           )
-          # ===== update-alternatives --install <link> <name> <path> <priority> =====
           for tool in "${tools_clang[@]}"; do
-            versions=$(ls /usr/bin/${tool}-* | grep -Eo '[0-9]+$' | sort -u)
+            versions=$(ls /usr/bin/${tool}-* 2>/dev/null | grep -Eo '[0-9]+$' | sort -u || true)
             for version in ${versions}; do
               sudo update-alternatives --install /usr/bin/${tool} ${tool} /usr/bin/${tool}-${version} ${version}
             done
           done
-          # ===== update-alternatives --query <name> =====
-          sudo update-alternatives --query clang
-          sudo update-alternatives --query clang-format
-          sudo update-alternatives --query clang-tidy
-          # sudo update-alternatives --query lld
-          # sudo update-alternatives --query lldb
-          # ===== update-alternatives --set <name> <path> =====
+
+          sudo update-alternatives --query clang    || true
+          sudo update-alternatives --query clang-format || true
+          sudo update-alternatives --query clang-tidy   || true
+
           for tool in "${tools_clang[@]}"; do
-            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${{ env.version_clang }}
+            sudo update-alternatives --set ${tool} /usr/bin/${tool}-${version_clang} || true
           done
 
-          # ========== reload ==========
           sudo -E apt-get -yqq autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
 
-          # ===== verify version =====
-          clang --version
-          clang-format --version
-          clang-tidy --version
-          # lld --version
-          # lldb --version
+          # Verify
+          clang --version || true
+          clang-format --version || true
+          clang-tidy --version || true
           echo "Switched to Clang version ${version_clang}"
-
           df -Th
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
@@ -744,6 +693,58 @@ jobs:
           aarch64-linux-gnu-gcc --version
 
           echo "Switched to AArch64 GCC version ${version_gcc}."
+          echo "status=success" | tee -a ${GITHUB_OUTPUT}
+
+      - name: Clean JDK
+        id: clean-jdk
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          VERSION_JDK: 21
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
+
+          sudo -E apt-get -yqq update
+          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
+
+          # ----- package for re-install -----
+          regexes=(
+            "temurin-[0-9]+-jdk"
+            "openjdk-[0-9]+.*"
+            "zulu*"
+          )
+          packages_purge=()
+          for regex in "${regexes[@]}"; do
+            for package in $package_installed; do
+              if [[ $package =~ $regex ]]; then
+                  packages_purge+=("$package")
+              fi
+            done
+          done
+
+          echo "Packages to be purged: ${packages_purge[@]}"
+          set +e
+          for package in "${packages_purge[@]}"; do
+            echo "Attempting to remove $package"
+            sudo -E apt-get -yqq autoremove --purge $package
+            if [[ $? -ne 0 ]]; then
+              echo "Failed to remove $package"
+            fi
+          done
+          set -e
+
+          packages_install=(
+            "openjdk-${{ env.VERSION_JDK }}-jdk"
+          )
+          echo "Packages to be installed: ${packages_install[@]}"
+          sudo -E apt-get -qq -y install "${packages_install[@]}"
+
+          # ========== reload ==========
+          sudo -E apt-get -qq -y autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo -E systemctl daemon-reload
+
+          df -Th
           echo "status=success" | tee -a ${GITHUB_OUTPUT}
 
       - name: Setup Docker
