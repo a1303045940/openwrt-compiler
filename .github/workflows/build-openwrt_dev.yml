@@ -93,11 +93,11 @@ jobs:
       # jdk_switch: true
       jdk_version: 21
       # ----- docker -----
-      docker_setup: false
-      qemu_setup: false
+      docker_install: false
+      qemu_install: false
     steps:
       - name: Set environment variable
-        id: var
+        id: var-setup
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
@@ -168,7 +168,7 @@ jobs:
           done
 
       - name: Load Custom Environment Variables
-        id: env-custom
+        id: var-custom
         if: ${{ env.custom_env != '' }}
         env:
           flag_split: ";"
@@ -779,9 +779,9 @@ jobs:
           distribution: "temurin"
           java-version: ${{ env.jdk_version }}
 
-      - name: (Setup) Docker
-        id: docker-setup
-        if: ${{ env.docker_setup == 'true' }}
+      - name: (Install) Docker
+        id: docker-install
+        if: ${{ env.docker_install == 'true' }}
         working-directory: /
         run: |
           # https://docs.docker.com/engine/install/ubuntu/
@@ -812,9 +812,9 @@ jobs:
 
           docker --version
 
-      - name: (Setup) QEMU
-        id: qemu-setup
-        if: ${{ env.qemu_setup == 'true' }}
+      - name: (Install) QEMU
+        id: qemu-install
+        if: ${{ env.qemu_install == 'true' }}
         uses: docker/setup-qemu-action@master
         # with:
         #   platforms: ${{ env.arch_branch }}
