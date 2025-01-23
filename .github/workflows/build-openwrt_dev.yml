@@ -88,6 +88,9 @@ jobs:
       clang_switch: true
       clang_version: 19
       # ----- jdk -----
+      jdk_purge: true
+      # jdk_install: true
+      # jdk_switch: true
       jdk_version: 21
       # ----- docker -----
       docker_setup: false
@@ -178,6 +181,9 @@ jobs:
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
+          df -Th
+          sudo -E apt-get -yqq update
+          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
 
           packages_install=(
             "ack"
@@ -302,24 +308,26 @@ jobs:
             "zip"
             "zlib1g-dev"
           )
-          sudo -E apt-get -yqq update
           sudo -E apt-get -yqq install "${packages_install[@]}"
           # sudo -E apt-get -yqq install "${packages_slim[@]}"
+
+          # ========== reload ==========
           sudo -E apt-get -yqq autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
+          df -Th
 
       # ========== Clean up environment ==========
-      - name: Clean Snap
-        id: clean-snap
+      - name: Purge Snap
+        id: snap-purge
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
           df -Th
-
           sudo -E apt-get -yqq update
-          sudo snap list
+          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
 
+          sudo snap list
           # ===== Remove snap =====
           for p in $(snap list | awk '{print $1}'); do
             sudo snap remove $p
@@ -337,12 +345,15 @@ jobs:
           Pin: release a=*
           Pin-Priority: -10
           EOF'
-          sudo -E systemctl daemon-reload
 
+          # ========== reload ==========
+          sudo -E apt-get -yqq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo -E systemctl daemon-reload
           df -Th
 
       - name: Clean Docker Images
-        id: docker
+        id: docker-clean
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
@@ -362,11 +373,11 @@ jobs:
         run: |
           echo -e "Current working directory: $(pwd)"
           df -Th
+          sudo -E apt-get -yqq update
+          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
 
           # ===== Clean Apt =====
           # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
-          sudo -E apt-get -yqq update
-          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
 
           # ----- package for purge -----
           packages_purge=(
@@ -399,9 +410,6 @@ jobs:
           # ===== Clean PowerShell Tools =====
           sudo -E rm -rf /usr/local/share/powershell
 
-          # ===== Clean Android Tools =====
-          sudo find /usr/local/lib/android/sdk/ndk/ -type d -regex '.*/2[0-6].*' -exec rm -rf {} +
-
           # ===== Clean AGENT_TOOLSDIRECTORY =====
           # 如果环境变量 AGENT_TOOLSDIRECTORY 不为空，则删除该目录及其所有内容
           [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
@@ -415,7 +423,6 @@ jobs:
           sudo -E apt-get -yqq autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
-
           df -Th
       
       - name: Purge Existing GCC
@@ -426,8 +433,8 @@ jobs:
           echo -e "Current working directory: $(pwd)"
           df -Th
           sudo -E apt-get -yqq update
-
           package_installed=$(dpkg-query -W -f='${binary:Package}\n')
+
           regexes=(
             "gcc-[0-9]+.*"
             "libgcc-[0-9]+.*"
@@ -457,10 +464,11 @@ jobs:
           done
           set -e
 
-          # reload
+          # ========== reload ==========
           sudo -E apt-get -yqq autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
+          df -Th
 
       - name: Install GCC - ${{ env.gcc_version }}
         id: gcc-install
@@ -486,6 +494,12 @@ jobs:
           )
           echo "Packages to be installed: ${packages_install[@]}"
           sudo -E apt-get -yqq install "${packages_install[@]}"
+
+          # ========== reload ==========
+          sudo -E apt-get -yqq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo -E systemctl daemon-reload
+          df -Th
 
       - name: Switch Installed GCC - ${{ env.gcc_version }}
         id: gcc-switch
@@ -521,23 +535,24 @@ jobs:
             sudo update-alternatives --set ${tool} /usr/bin/${tool}-${gcc_version}
           done
 
-          # reload
+          # ========== reload ==========
           sudo -E apt-get -yqq autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
+          df -Th
 
           # 验证
           gcc --version
           g++ --version
           echo "Switched to GCC/G++ version ${gcc_version}"
-          df -Th
       
       - name: Purge Existing Clang
         id: clang-purge
         if: ${{ env.clang_purge == 'true' }}
         working-directory: /
         run: |
-          echo "Current working directory: $(pwd)"
+          echo -e "Current working directory: $(pwd)"
+          df -Th
           sudo -E apt-get -yqq update
           package_installed=$(dpkg-query -W -f='${binary:Package}\n')
 
@@ -568,10 +583,12 @@ jobs:
             fi
           done
           set -e
-
+          
+          # ========== reload ==========
           sudo -E apt-get -yqq autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
+          df -Th
 
       - name: Install Clang - ${{ env.clang_version }}
         id: clang-install
@@ -588,6 +605,12 @@ jobs:
           )
           echo "Packages to be installed: ${packages_install[@]}"
           sudo -E apt-get -yqq install "${packages_install[@]}"
+
+          # ========== reload ==========
+          sudo -E apt-get -yqq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo -E systemctl daemon-reload
+          df -Th
 
       - name: Switch Clang
         id: clang-switch
@@ -619,16 +642,17 @@ jobs:
             sudo update-alternatives --set ${tool} /usr/bin/${tool}-${clang_version} || true
           done
 
+          # ========== reload ==========
           sudo -E apt-get -yqq autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
+          df -Th
 
           # Verify
           clang --version || true
           clang-format --version || true
           clang-tidy --version || true
           echo "Switched to Clang version ${clang_version}"
-          df -Th
 
       - name: Switch AArch64 Cross-Compiler
         id: switch-aarch64-gcc
@@ -636,7 +660,7 @@ jobs:
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
-
+          df -Th
           sudo -E apt-get -yqq update
           package_installed=$(dpkg-query -W -f='${binary:Package}\n')
 
@@ -671,21 +695,26 @@ jobs:
             sudo update-alternatives --set ${tool} /usr/bin/${tool}-${{ env.gcc_version }}
           done
 
+          # ========== reload ==========
+          sudo -E apt-get -yqq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo -E systemctl daemon-reload
+          df -Th
+
           # 验证版本
           aarch64-linux-gnu-gcc --version
-
           echo "Switched to AArch64 GCC version ${gcc_version}."
 
-      - name: Clean JDK
-        id: clean-jdk
+      - name: Purge JDK
+        id: jdk-purge
+        if: ${{ env.jdk_purge == 'true' }}
         working-directory: /
         run: |
           echo -e "Current working directory: $(pwd)"
-
+          df -Th
           sudo -E apt-get -yqq update
           package_installed=$(dpkg-query -W -f='${binary:Package}\n')
 
-          # ----- package for re-install -----
           regexes=(
             "temurin-[0-9]+-jdk"
             "openjdk-[0-9]+.*"
@@ -695,7 +724,7 @@ jobs:
           for regex in "${regexes[@]}"; do
             for package in $package_installed; do
               if [[ $package =~ $regex ]]; then
-                  packages_purge+=("$package")
+                packages_purge+=("$package")
               fi
             done
           done
@@ -704,12 +733,31 @@ jobs:
           set +e
           for package in "${packages_purge[@]}"; do
             echo "Attempting to remove $package"
-            sudo -E apt-get -yqq autoremove --purge $package
+            sudo -E apt-get -yqq autoremove --purge "$package"
             if [[ $? -ne 0 ]]; then
               echo "Failed to remove $package"
             fi
           done
           set -e
+
+          # ===== Clean Android Tools =====
+          sudo find /usr/local/lib/android/sdk/ndk/ -type d -regex '.*/[0-9]+.*' -exec rm -rf {} +
+
+          # ========== reload ==========
+          sudo -E apt-get -yqq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo -E systemctl daemon-reload
+          df -Th
+
+      - name: Install JDK
+        id: jdk-install
+        if: ${{ env.jdk_install == 'true' }}
+        working-directory: /
+        run: |
+          echo -e "Current working directory: $(pwd)"
+          df -Th
+          sudo -E apt-get -yqq update
+          package_installed=$(dpkg-query -W -f='${binary:Package}\n')
 
           packages_install=(
             "openjdk-${{ env.jdk_version }}-jdk"
@@ -718,10 +766,9 @@ jobs:
           sudo -E apt-get -qq -y install "${packages_install[@]}"
 
           # ========== reload ==========
-          sudo -E apt-get -qq -y autoremove --purge
+          sudo -E apt-get -yqq autoremove --purge
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
-
           df -Th
 
       - name: Setup Docker
@@ -748,6 +795,12 @@ jobs:
 
           # ===== 2. Install the Docker packages =====
           sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          
+          # ========== reload ==========
+          sudo -E apt-get -yqq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo -E systemctl daemon-reload
+          df -Th
 
           docker --version
 
