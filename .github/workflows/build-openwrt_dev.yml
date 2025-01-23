@@ -84,8 +84,8 @@ jobs:
       gcc_version: 14
       # ----- clang -----
       clang_purge: true
-      clang_install: true
-      clang_switch: true
+      # clang_install: true
+      # clang_switch: true
       clang_version: 19
       # ----- jdk -----
       jdk_purge: true
