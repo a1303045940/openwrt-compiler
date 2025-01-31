@@ -1,0 +1,37 @@
+name: Cleanup Release and Tag (Dev)
+
+on:
+  workflow_dispatch:
+    inputs:
+      keyword:
+        description: "关键字，用于匹配需要删除的 release 和 tag"
+        required: true
+        default: "6.6.60"
+
+run-name: Release and Tag - ${{ inputs.keyword }}
+
+jobs:
+  delete:
+    name: ${{ inputs.keyword }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install GitHub CLI
+        run: sudo apt-get -y update && sudo apt-get -y install gh
+
+      - name: Auth with GitHub CLI
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Delete matched releases and tags
+        run: |
+          # 删除匹配的 Release
+          for rid in $(gh api repos/$GITHUB_REPOSITORY/releases | jq -r '.[] | select(.tag_name | contains("'"${{ inputs.keyword }}"'")) | .id'); do
+            echo "Deleting release ID: $rid"
+            gh api --method DELETE repos/$GITHUB_REPOSITORY/releases/$rid
+          done
+
+          # 删除匹配的 Tag
+          for ref in $(gh api repos/$GITHUB_REPOSITORY/git/refs/tags | jq -r '.[] | select(.ref | contains("'"${{ inputs.keyword }}"'")) | .ref'); do
+            echo "Deleting ref: $ref"
+            gh api --method DELETE repos/$GITHUB_REPOSITORY/git/$ref
+          done
