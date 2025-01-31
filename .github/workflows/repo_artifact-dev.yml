@@ -748,12 +748,25 @@ jobs:
           git clone ${{ inputs.Target_Repository }} ${path_build} --single-branch --depth=${{ env.clone_depth }} --branch=${{ inputs.Target_Branch }}
           echo -e " -> Repository: ${{ inputs.Target_Repository }}\n -> Branch: ${{ inputs.Target_Branch }}"
 
-          cd ${path_build}
+          ls -lh ${path_build}
+          df -Th ${path_build}
+
+      - name: (OpenWrt) Feeds update & install
+        id: openwrt-feeds
+        if: ${{ steps.clone-target.conclusion }} == 'success' && !cancelled()
+        working-directory: ${{ env.path_build }}
+        run: |
+          echo -e "Current working directory: $(pwd)"
+          df -Th
+
           # 获取仓库的根目录路径
           root_dir=$(git rev-parse --show-toplevel)
           # 使用 basename 提取仓库名
           repo_name=$(basename "$root_dir")
           echo "仓库名称: $repo_name"
+
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
 
           ls -lh ${path_build}
           df -Th ${path_build}
