@@ -32,6 +32,7 @@ on:
           - "x86_64"
           - "MT798x"
           - "MT7620"
+          - "MT7621"
       Target_Profile:
         description: "Target Profile"
         required: false
