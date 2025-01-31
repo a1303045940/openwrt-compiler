@@ -28,11 +28,11 @@ jobs:
           # 列出所有 release（含 tag），用 grep 过滤出包含关键字的行
           # 其中 releaseName 就是 release 的 tagName
           for releaseName in $(
-            gh release list --limit 100 \
+            gh release list --repo "$GITHUB_REPOSITORY" --limit 100 \
             | grep "${{ inputs.keyword }}" \
             | awk '{print $1}'
           ); do
             echo "Deleting release (and tag): $releaseName"
             # gh release delete <tag> 命令会同时删除该 release 及其 tag
-            gh release delete "${releaseName}" -y
+            gh release delete "${releaseName}" --repo "$GITHUB_REPOSITORY" -y
           done
