@@ -776,7 +776,7 @@ jobs:
 
       - name: Compress Synced Directory to XZ
         env:
-          FILE_NAME: "${{ inputs.Target_Branch }}"
+          FILE_NAME: "${{ steps.clone-target.outputs.repo_name }}_${{ inputs.Target_Branch }}"
           dir_archive: "${{ env.path_build }}"
           dir_output: "${{ github.workspace }}"
           target_ext: "tar.xz"
