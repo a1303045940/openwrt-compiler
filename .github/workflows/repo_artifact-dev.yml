@@ -748,6 +748,7 @@ jobs:
           git clone ${{ inputs.Target_Repository }} ${path_build} --single-branch --depth=${{ env.clone_depth }} --branch=${{ inputs.Target_Branch }}
           echo -e " -> Repository: ${{ inputs.Target_Repository }}\n -> Branch: ${{ inputs.Target_Branch }}"
 
+          cd ${path_build}
           # 获取仓库的根目录路径
           root_dir=$(git rev-parse --show-toplevel)
           # 使用 basename 提取仓库名
