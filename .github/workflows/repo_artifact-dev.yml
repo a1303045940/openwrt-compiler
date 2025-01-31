@@ -12,7 +12,7 @@ on:
       Target_Repository:
         description: "Target Repository"
         required: true
-        default: "git.openwrt.org/openwrt/openwrt.git"
+        default: "git://git.openwrt.org/openwrt/openwrt.git"
         type: string
       Target_Branch:
         description: "Target Repository Branch"
