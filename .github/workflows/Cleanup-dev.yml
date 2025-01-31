@@ -23,16 +23,16 @@ jobs:
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
-      - name: Delete releases (and tags) with keyword
+      - name: Delete releases and tags with keyword
         run: |
-          # 列出所有 release（含 tag），用 grep 过滤出包含关键字的行
-          # 其中 releaseName 就是 release 的 tagName
-          for releaseName in $(
-            gh release list --repo "$GITHUB_REPOSITORY" --limit 100 \
-            | grep "${{ inputs.keyword }}" \
-            | awk '{print $1}'
-          ); do
-            echo "Deleting release (and tag): $releaseName"
-            # gh release delete <tag> 命令会同时删除该 release 及其 tag
-            gh release delete "${releaseName}" --repo "$GITHUB_REPOSITORY" -y
+          # 删除匹配的 Releases
+          for tag in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 | grep "${{ inputs.keyword }}" | awk '{print $1}'); do
+            echo "Deleting release: $tag"
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" -y || true
+          done
+      
+          # 删除匹配的 Tags
+          for ref in $(gh api repos/$GITHUB_REPOSITORY/git/refs/tags | jq -r '.[] | select(.ref | contains("'"${{ inputs.keyword }}"'")) | .ref'); do
+            echo "Deleting tag: $ref"
+            gh api --method DELETE repos/$GITHUB_REPOSITORY/git/$ref || true
           done
