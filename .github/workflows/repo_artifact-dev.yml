@@ -43,14 +43,14 @@ on:
         type: string
         required: false
 
-run-name: ${{ inputs.runner_image }}
+run-name: ${{ inputs.Target_Repository }} - ${{ inputs.Target_Branch }}
 
 env:
   custom_env: ${{ inputs.custom_env || '' }}
 
 jobs:
   build:
-    name: ${{ inputs.runner_image }}
+    name: ${{ inputs.Target_Repository }} - ${{ inputs.Target_Branch }}
     runs-on: ${{ inputs.runner_image || 'ubuntu-latest' }}
     env:
       DEBIAN_FRONTEND: noninteractive
