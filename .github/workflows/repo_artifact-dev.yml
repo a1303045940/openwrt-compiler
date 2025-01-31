@@ -756,14 +756,7 @@ jobs:
           repo_url=$(git config --get remote.origin.url)
           # 使用 basename 提取仓库名，并去除 .git 后缀（如果有）
           repo_name=$(basename -s .git "$repo_url")
-          echo "仓库名称: $repo_name"
-
-          # # 获取仓库的根目录路径
-          # root_dir=$(git rev-parse --show-toplevel)
-          # # 使用 basename 提取仓库名
-          # repo_name=$(basename "$root_dir")
-          # echo "仓库名称: $repo_name"
-          
+          echo "repo_name=$repo_name" | tee -a $GITHUB_OUTPUT
 
       - name: (OpenWrt) Feeds update & install
         id: openwrt-feeds
