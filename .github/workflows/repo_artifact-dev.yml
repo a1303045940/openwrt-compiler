@@ -812,7 +812,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@main
         with:
-          name: "${{ inputs.Target_Branch }}"
+          name: "${{ steps.clone-target.outputs.repo_name }}_${{ inputs.Target_Branch }}"
           path: "${{ github.workspace }}/*.tar.xz"
           retention-days: ${{ env.retention_days || '1' }}
       
