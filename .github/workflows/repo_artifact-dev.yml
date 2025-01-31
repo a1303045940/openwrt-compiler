@@ -745,6 +745,13 @@ jobs:
           echo -e "Current working directory: $(pwd)"
           df -Th
 
+          git clone ${{ inputs.Target_Repository }} ${path_build} --single-branch --depth=${{ env.clone_depth }} --branch=${{ inputs.Target_Branch }}
+          echo -e " -> Repository: ${{ inputs.Target_Repository }}\n -> Branch: ${{ inputs.Target_Branch }}"
+
+          cd ${path_build}
+          ls -lh ${path_build}
+          df -Th ${path_build}
+
           # 获取远程 origin 的 URL
           repo_url=$(git config --get remote.origin.url)
           # 使用 basename 提取仓库名，并去除 .git 后缀（如果有）
@@ -756,12 +763,7 @@ jobs:
           # # 使用 basename 提取仓库名
           # repo_name=$(basename "$root_dir")
           # echo "仓库名称: $repo_name"
-
-          git clone ${{ inputs.Target_Repository }} ${path_build} --single-branch --depth=${{ env.clone_depth }} --branch=${{ inputs.Target_Branch }}
-          echo -e " -> Repository: ${{ inputs.Target_Repository }}\n -> Branch: ${{ inputs.Target_Branch }}"
-
-          ls -lh ${path_build}
-          df -Th ${path_build}
+          
 
       - name: (OpenWrt) Feeds update & install
         id: openwrt-feeds
