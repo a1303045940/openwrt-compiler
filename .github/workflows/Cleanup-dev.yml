@@ -25,14 +25,23 @@ jobs:
 
       - name: Delete releases and tags with keyword
         run: |
-          # 删除匹配的 Releases
-          for tag in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 | grep "${{ inputs.keyword }}" | awk '{print $1}'); do
-            echo "Deleting release: $tag"
-            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" -y || true
+          KEYWORD="${{ inputs.keyword }}"
+          REPO="${GITHUB_REPOSITORY}"
+      
+          # 通过 API 获取所有 releases 再过滤，避免命令行解析错误
+          echo "Processing releases..."
+          gh api repos/$REPO/releases --paginate | jq -r --arg kw "$KEYWORD" '.[] | select(.tag_name | contains($kw)) | .id' | while read -r id; do
+            if [ -n "$id" ]; then
+              echo "Deleting release ID: $id"
+              gh api --method DELETE "repos/$REPO/releases/$id" || true
+            fi
           done
       
-          # 删除匹配的 Tags
-          for ref in $(gh api repos/$GITHUB_REPOSITORY/git/refs/tags | jq -r '.[] | select(.ref | contains("'"${{ inputs.keyword }}"'")) | .ref'); do
-            echo "Deleting tag: $ref"
-            gh api --method DELETE repos/$GITHUB_REPOSITORY/git/$ref || true
+          # 删除匹配的 tags
+          echo "Processing tags..."
+          gh api repos/$REPO/git/refs/tags | jq -r --arg kw "$KEYWORD" '.[] | select(.ref | contains($kw)) | .ref' | while read -r ref; do
+            if [ -n "$ref" ]; then
+              echo "Deleting tag: $ref"
+              gh api --method DELETE "repos/$REPO/git/$ref" || true
+            fi
           done
