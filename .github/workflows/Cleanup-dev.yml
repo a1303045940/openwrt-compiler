@@ -1,4 +1,4 @@
-name: Cleanup Release and Tag (Dev)
+name: Cleanup Release & Tag (Dev)
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
         required: true
         default: "6.6.60"
 
-run-name: Release and Tag - ${{ inputs.keyword }}
+run-name: Delete - ${{ inputs.keyword }}
 
 jobs:
   delete:
