@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       keyword:
-        description: "关键字，用于匹配需要删除的 release 和 tag"
+        description: "keyword to delete"
         required: true
         default: "6.6.60"
 
