@@ -424,7 +424,7 @@ jobs:
           sudo -E apt-get -qq clean
           sudo -E systemctl daemon-reload
           df -Th
-      
+
       - name: (Purge) Existing GCC
         id: gcc-purge
         if: ${{ env.gcc_purge == 'true' }}
@@ -545,7 +545,7 @@ jobs:
           gcc --version
           g++ --version
           echo "Switched to GCC/G++ version ${gcc_version}"
-      
+
       - name: (Purge) Existing Clang
         id: clang-purge
         if: ${{ env.clang_purge == 'true' }}
@@ -583,7 +583,7 @@ jobs:
             fi
           done
           set -e
-          
+
           # ========== reload ==========
           sudo -E apt-get -yqq autoremove --purge
           sudo -E apt-get -qq clean
@@ -803,7 +803,7 @@ jobs:
 
           # ===== 2. Install the Docker packages =====
           sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-          
+
           # ========== reload ==========
           sudo -E apt-get -yqq autoremove --purge
           sudo -E apt-get -qq clean
@@ -901,7 +901,8 @@ jobs:
         run: |
           echo -e "Current working directory: $(pwd)"
 
-          git clone ${repo_openwrt} ${path_openwrt} --single-branch --depth=1 --branch=${repo_openwrt_branch}
+          # --depth=1
+          git clone ${repo_openwrt} ${path_openwrt} --single-branch --branch=${repo_openwrt_branch}
           echo -e "repo_openwrt: [ ${repo_openwrt} ]\nBRANCH: [ ${repo_openwrt_branch} ]"
 
           df -hT ${PWD}
@@ -1081,7 +1082,6 @@ jobs:
           cp -f ${path_openwrt}/.config ${path_output}/config
 
           echo -e "timestamp=$(date +"%y%mw%V")" >> ${GITHUB_OUTPUT}
-          
 
       - name: Version of the kernel
         id: version-kernel
