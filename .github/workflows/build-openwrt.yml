@@ -88,10 +88,10 @@ jobs:
       # clang_switch: true
       clang_version: 19
       # ----- jdk -----
-      jdk_purge: true
+      # jdk_purge: true
       # jdk_install: true
       # jdk_switch: true
-      jdk_version: 21
+      # jdk_version: 21
       # ----- docker -----
       docker_install: false
       qemu_install: false
