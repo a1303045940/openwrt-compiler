@@ -1177,10 +1177,10 @@ jobs:
             fi
           done
 
-          # 读取profiles.json
-          profiles_json_path="${{ env.path_output }}/profiles.json"
-          profiles_json_content=$(jq '.' "$profiles_json_path")
-          # record_to_markdown "Profiles" "$profiles_json_content" "json"
+          # # 读取profiles.json
+          # profiles_json_path="${{ env.path_output }}/profiles.json"
+          # profiles_json_content=$(jq '.' "$profiles_json_path")
+          # # record_to_markdown "Profiles" "$profiles_json_content" "json"
 
           cat ${release_md}
 
