@@ -59,6 +59,9 @@ jobs:
           - Target_System: "MediaTek_Ralink_ARM"
             Subtarget: "MT798x"
             Target_Profile: "nokia_ea0326gmp"
+          - Target_System: "MediaTek_Ralink_ARM"
+            Subtarget: "MT798x"
+            Target_Profile: "immortalwrt-mt798x"
     with:
       runner_image: ${{ matrix.runner_image }}
       OpenWrt_Repository: ${{ matrix.openwrt_repo }}
