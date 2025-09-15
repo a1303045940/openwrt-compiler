@@ -46,20 +46,19 @@ jobs:
       matrix:
         runner_image: ["ubuntu-24.04"]
         openwrt_repo: [
-            "github.com/immortalwrt/immortalwrt.git",
-            # "github.com/hanwckf/immortalwrt-mt798x.git",
+            # "github.com/immortalwrt/immortalwrt.git",
+            "github.com/hanwckf/immortalwrt-mt798x.git",
           ]
         openwrt_branch:
-          # - "${{ needs.heads.outputs.latest_branch }}"
-          - "master"
-          # - "openwrt-21.02"
+          # - "master"
+          - "openwrt-21.02"
         workflows_inputs:
-          - Target_System: "MediaTek_Ralink_ARM"
-            Subtarget: "MT798x"
-            Target_Profile: ""
           # - Target_System: "MediaTek_Ralink_ARM"
           #   Subtarget: "MT798x"
-          #   Target_Profile: "nokia_ea0326gmp"
+          #   Target_Profile: ""
+          - Target_System: "MediaTek_Ralink_ARM"
+            Subtarget: "MT798x"
+            Target_Profile: "nokia_ea0326gmp"
     with:
       runner_image: ${{ matrix.runner_image }}
       OpenWrt_Repository: ${{ matrix.openwrt_repo }}
