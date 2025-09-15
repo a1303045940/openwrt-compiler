@@ -48,7 +48,7 @@ jobs:
         openwrt_repo: [
             # "git.openwrt.org/openwrt/openwrt.git",
             "github.com/immortalwrt/immortalwrt.git",
-            # "github.com/hanwckf/immortalwrt-mt798x.git",
+            "github.com/hanwckf/immortalwrt-mt798x.git",
           ]
         openwrt_branch:
           - "main"
