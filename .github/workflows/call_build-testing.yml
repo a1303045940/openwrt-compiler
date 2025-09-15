@@ -1,0 +1,75 @@
+name: Call Build (immortalwrt)
+
+# https://docs.github.com/zh/actions/writing-workflows/workflow-syntax-for-github-actions
+run-name: Build Matrix for OpenWrt
+
+on:
+  schedule:
+    # 21:00 UTC
+    - cron: "0 21 * * *"
+  repository_dispatch:
+  workflow_dispatch:
+
+jobs:
+  heads:
+    name: Heads of ${{ matrix.repo_target }}
+    runs-on: ${{ matrix.runner_image || 'ubuntu-latest' }}
+    outputs:
+      latest_branch: ${{ steps.find_latest.outputs.latest_branch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner_image: ["ubuntu-latest"]
+        repo_target: ["https://git.openwrt.org/openwrt/openwrt.git"]
+    steps:
+      - name: Get the latest openwrt version branch
+        id: find_latest
+        run: |
+          latest_version=$(git ls-remote --heads ${{ matrix.repo_target }} \
+            | grep 'refs/heads/openwrt-[0-9]\+\.[0-9]\+$' \
+            | sed 's/.*refs\/heads\/openwrt-//' \
+            | sort -V \
+            | tail -n1)
+          echo "latest_branch=openwrt-$latest_version" >> $GITHUB_OUTPUT
+
+      - name: Check the latest branch
+        id: check
+        run: |
+          echo "The latest branch is: ${{ steps.find_latest.outputs.latest_branch }}"
+
+  openwrt:
+    name: ${{ matrix.openwrt_branch }}
+    needs: heads
+    uses: ./.github/workflows/build-openwrt.yml
+    strategy:
+      fail-fast: false
+      matrix:
+        runner_image: ["ubuntu-24.04"]
+        openwrt_repo: [
+            # "git.openwrt.org/openwrt/openwrt.git",
+            "github.com/immortalwrt/immortalwrt.git",
+            # "github.com/hanwckf/immortalwrt-mt798x.git",
+          ]
+        openwrt_branch:
+          - "main"
+          - "${{ needs.heads.outputs.latest_branch }}"
+        workflows_inputs:
+          - Target_System: "x86"
+            Subtarget: "x86_64"
+            Target_Profile: ""
+          - Target_System: "MediaTek_Ralink_ARM"
+            Subtarget: "MT798x"
+            Target_Profile: ""
+          # - Target_System: "MediaTek_Ralink_ARM"
+          #   Subtarget: "MT798x"
+          #   Target_Profile: "nokia_ea0326gmp"
+          # - Target_System: "MediaTek_Ralink_MIPS"
+          #   Subtarget: "MT7621"
+          #   Target_Profile: ""
+    with:
+      runner_image: ${{ matrix.runner_image }}
+      OpenWrt_Repository: ${{ matrix.openwrt_repo }}
+      OpenWrt_Branch: ${{ matrix.openwrt_branch }}
+      Target_System: ${{ matrix.workflows_inputs.Target_System }}
+      Subtarget: ${{ matrix.workflows_inputs.Subtarget }}
+      Target_Profile: ${{ matrix.workflows_inputs.Target_Profile }}
