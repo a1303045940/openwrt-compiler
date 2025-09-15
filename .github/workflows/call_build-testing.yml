@@ -47,13 +47,13 @@ jobs:
         runner_image: ["ubuntu-24.04"]
         openwrt_repo: [
             # "git.openwrt.org/openwrt/openwrt.git",
-            # "github.com/immortalwrt/immortalwrt.git",
-            "github.com/hanwckf/immortalwrt-mt798x.git",
+            "github.com/immortalwrt/immortalwrt.git",
+            # "github.com/hanwckf/immortalwrt-mt798x.git",
           ]
         openwrt_branch:
-          # - "master"
+          - "master"
           # - "${{ needs.heads.outputs.latest_branch }}"
-          - "openwrt-21.02"
+          # - "openwrt-21.02"
         workflows_inputs:
           # - Target_System: "x86"
           #   Subtarget: "x86_64"
