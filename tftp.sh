@@ -1,4 +1,4 @@
-### test
+### cat /proc/mtd
 dev:    size   erasesize  name
 mtd0: 00100000 00020000 "bl2"
 mtd1: 00080000 00020000 "u-boot-env"
