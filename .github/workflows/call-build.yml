@@ -45,11 +45,10 @@ jobs:
       fail-fast: false
       matrix:
         runner_image: ["ubuntu-24.04"]
-        openwrt_repo:
-          [
+        openwrt_repo: [
             "git.openwrt.org/openwrt/openwrt.git",
-            "github.com/immortalwrt/immortalwrt.git",
-            "github.com/hanwckf/immortalwrt-mt798x.git",
+            # "github.com/immortalwrt/immortalwrt.git",
+            # "github.com/hanwckf/immortalwrt-mt798x.git",
           ]
         openwrt_branch:
           - "main"
