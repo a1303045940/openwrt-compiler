@@ -20,13 +20,13 @@ on:
         default: "x86"
         type: choice
         options:
-          - "x86"
+          - "MediaTek_Ralink_ARM"
           - "MediaTek_Ralink_ARM"
           - "MediaTek_Ralink_MIPS"
       Subtarget:
         description: "Subtarget"
         required: true
-        default: "x86_64"
+        default: "MT798x"
         type: choice
         options:
           - "x86_64"
@@ -35,7 +35,7 @@ on:
       Target_Profile:
         description: "Target Profile"
         required: false
-        default: ""
+        default: "clt-r30b1-112m"
         type: string
       runner_image:
         description: "Runner Image"
